@@ -67,8 +67,7 @@ def get_article():
 # In[177]:
 
 
-x = get_article()
-print(x)
+print(get_article())
 
 
 # In[ ]:
