@@ -151,7 +151,7 @@ def scrape_wiki(search_text):
         wiki_page = requests.get(wiki_link)
         wiki_page = bs4(wiki_page.text,'html.parser')
         summary = wiki_page.find_all('p')[1].get_text()
-        image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
+        #image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
         text = summary + "\n\n" + wiki_link
         return(text)
 
