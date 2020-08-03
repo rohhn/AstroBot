@@ -4,6 +4,7 @@ from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHan
 import datetime
 import random
 import re
+from better_profanity import profanity
 
 
 
@@ -28,12 +29,14 @@ def get_article_url(url):
 def get_time(i):
     posted_time = i.find(class_ = "r0bn4c rQMQod").contents[0]
     posted_time = posted_time.split(" ")
-    if (posted_time[1] == 'hours' or posted_time[1] == 'hour'):
+    if (posted_time[1] == 'mins' or posted_time[1] == 'min'):
         time_since = 0.1 * int(posted_time[0])
-    elif (posted_time[1] == 'days' or posted_time[1] == 'day'):
+    if (posted_time[1] == 'hours' or posted_time[1] == 'hour'):
         time_since = 1 * int(posted_time[0])
+    elif (posted_time[1] == 'days' or posted_time[1] == 'day'):
+        time_since = 10 * int(posted_time[0])
     elif (posted_time[1] == 'weeks' or posted_time[1] == 'week'):
-        time_since = 10* int(posted_time[0])
+        time_since = 100* int(posted_time[0])
     #elif (posted_time[1] == 'months' or posted_time[1] == 'month'):
     #    time_since = 100* int(posted_time[0])
     else:
@@ -108,15 +111,23 @@ def get_weekly_article():
 
 #FETCH ARTICLE BASED ON KEYWORDS BY USER
 def get_keyword_article(keyword):
-    url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
-    articles_text = scrape(url)
-    return(get_final_weekly_article(articles_text))
+    if(profanity.contains_profanity(keyword)):
+        return "null"
+    else:
+        url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
+        articles_text = scrape(url)
+        return(get_final_weekly_article(articles_text))
 
 def fetch_article(update, context):
     chat_id = update.message.chat_id
-    update.message.reply_text(get_keyword_article(str(context.args)))
+    update.message.reply_text(get_keyword_article(context.args[0]))
     
 #calls same function as weekly article generator    
+
+def bot_help(update, context):
+    chat_id = update.message.chat_id
+    help_text = "Bot commands:\n1. /randomarticle - Fetches a random article related to an astronomy subject\n2./about <keyword> - fetches article related to keyword"
+    update.message.reply_text(help_text)
     
 
 
@@ -127,7 +138,8 @@ def main():
     updater = Updater('1183471904:AAENQORzTAU_mTDXfv8xJU1s3rmK1PuzlpU', use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('randomarticle',random_article))
-    dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
+    dp.add_handler(CommandHandler('help',bot_help))
+    dp.add_handler(CommandHandler('about', fetch_article, pass_args=True))
     #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
     updater.start_polling()
     updater.idle()
