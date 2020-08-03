@@ -8,7 +8,10 @@ import pandas as pd
 from bs4 import BeautifulSoup as bs4
 import requests
 import json
+from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
+import datetime
 
+topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
 
 # In[172]:
 
@@ -58,20 +61,47 @@ def get_final_article(articles_text):
 
 
 def get_article():
-    keyword = input("Search query:")
+    day = datetime.datetime.now().strftime("%A")
+    time = int(datetime.datetime.now().strftime("%H"))
+    if day == 'Sunday' and time == 16:
+        keyword = topics[0]
+    elif day == 'Monday' and time == 9:
+        keyword = topics[1]
+    elif day == 'Monday' and time == 10:
+        keyword = topics[2]
+    else:
+        return("no article today")
+        
     url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
     return(get_final_article(articles_text))
 
-
 # In[177]:
 
 
-print(get_article())
+#print(get_article())
+
+def test(update, context):
+    update.message.reply_text(update.message.text)
 
 
 # In[ ]:
 
+def article(update, context):
+    #get_article()
+    chat_id = update.message.chat_id
+    #update.message.reply_text(get_article())
+    #bot.send_message(chat_id=chat_id, text=get_article())
+    update.message.reply_text(get_article())
 
 
+def main():
+    updater = Updater('1183471904:AAENQORzTAU_mTDXfv8xJU1s3rmK1PuzlpU', use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler('newarticle',article))
+    #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
+    updater.start_polling()
+    updater.idle()
 
+if __name__ == '__main__':
+    main()
