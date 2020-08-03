@@ -47,7 +47,7 @@ def get_time(i):
 
 
 
-#GENERATE RANDOM ARTICLES FROM POOL OF TOPICS
+# ------------------- GENERATE RANDOM ARTICLES FROM POOL OF TOPICS ----------------------#
 
 #Topics for random article generator
 random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory']
@@ -72,8 +72,9 @@ def random_article(update, context):
     chat_id = update.message.chat_id
     update.message.reply_text(get_random_article())
 
+# ----------------------------------------------------------------------------------------#
 
-#GENERATE 3 ARTICLES PER WEEK (SUNDAY, WEDNESDAY, FRIDAY)
+# ------------- GENERATE 3 ARTICLES PER WEEK (SUNDAY, WEDNESDAY, FRIDAY) ---------------- #
 
 #topics for 3 weekly articles
 weekly_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
@@ -107,9 +108,9 @@ def get_weekly_article():
 #    chat_id = update.message.chat_id
 #    update.message.reply_text(get_weekly_article())
 
+# --------------------------------------------------------------------------------------------#
 
-
-#FETCH ARTICLE BASED ON KEYWORDS BY USER
+# ----------------------- FETCH ARTICLE BASED ON KEYWORDS BY USER --------------------------- #
 def get_keyword_article(keyword):
     if(profanity.contains_profanity(keyword)):
         return "BAZINGA!"
@@ -129,12 +130,49 @@ def fetch_article(update, context):
     
 #calls same function as weekly article generator    
 
+# ----------------------------------------------------------------------------------------------#
+
+
+# ----------------------------- WIKI SUMMARY AND LINK GENERATOR --------------------------------#
+def get_wiki_link(search_text):
+    google_url = "https://www.google.com/search?q="+search_text+"&rlz=1C5CHFA_enIN908IN908&oq="+search_text+"&aqs=chrome.0.69i59.6224j0j1&sourceid=chrome&ie=UTF-8"
+    google_page = requests.get(google_url)
+    google_page = bs4(google_page.text,'html.parser')
+    google_page = google_page.find(class_ = "ZINbbc xpd O9g5cc uUPGi")
+    wiki_link = google_page.find('a')['href'].replace('/url?q=','')
+    wiki_link = wiki_link.split("&sa")[0]
+    return(wiki_link)
+
+def scrape_wiki(search_text):
+    if(profanity.contains_profanity(search_text)):
+        return("BAZINGA!")
+    else:
+        wiki_link = get_wiki_link(search_text)
+        wiki_page = requests.get(wiki_link)
+        wiki_page = bs4(wiki_page.text,'html.parser')
+        summary = wiki_page.find_all('p')[1].get_text()
+        image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
+        text = summary + "\n\n" + wiki_link
+        return(text)
+
+def get_wiki_info(update, context):
+    chat_id = update.message.chat_id
+    search_text=""
+    for i in context.args:
+        search_text = search_text + " " +i
+    search_text = search_text + "+wiki"
+    update.message.reply_text(scrape_wiki(search_text))
+
+# ----------------------------------------------------------------------------------------------#
+
+
+# ------------------------------------ PRINT HELP COMMANDS -------------------------------------#
 def bot_help(update, context):
     chat_id = update.message.chat_id
     help_text = "Hello, these are the following commands I can respond to:\n\n/randomarticle - Fetches a random article related to an astronomy subject.\n\n/about <keyword> - fetches an article related to the keyword.\n\n/help - Provides you with the current list of commands I can respond to."
     update.message.reply_text(help_text)
     
-
+# ----------------------------------------------------------------------------------------------#
 
 def main():
     #day = datetime.datetime.now().strftime("%A")
@@ -145,6 +183,7 @@ def main():
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
     dp.add_handler(CommandHandler('about', fetch_article, pass_args=True))
+    p.add_handler(CommandHandler('wiki',get_wiki_info))
     #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
     updater.start_polling()
     updater.idle()
