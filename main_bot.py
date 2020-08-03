@@ -183,7 +183,7 @@ def main():
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
     dp.add_handler(CommandHandler('about', fetch_article, pass_args=True))
-    p.add_handler(CommandHandler('wiki',get_wiki_info))
+    dp.add_handler(CommandHandler('wiki',get_wiki_info))
     #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
     updater.start_polling()
     updater.idle()
