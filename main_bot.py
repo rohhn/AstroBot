@@ -126,7 +126,7 @@ def fetch_article(update, context):
 
 def bot_help(update, context):
     chat_id = update.message.chat_id
-    help_text = "Bot commands:\n1. /randomarticle - Fetches a random article related to an astronomy subject\n2./about <keyword> - fetches article related to keyword"
+    help_text = "Hello, these are the following commands I can respond to:\n\n/randomarticle - Fetches a random article related to an astronomy subject.\n\n/about <keyword> - fetches an article related to the keyword.\n\n/help - Provides you with the current list of commands I can respond to."
     update.message.reply_text(help_text)
     
 
