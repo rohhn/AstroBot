@@ -112,15 +112,20 @@ def get_weekly_article():
 #FETCH ARTICLE BASED ON KEYWORDS BY USER
 def get_keyword_article(keyword):
     if(profanity.contains_profanity(keyword)):
-        return "null"
+        return "BAZINGA!"
     else:
+        keyword = keyword.replace(" ","+")
         url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
         articles_text = scrape(url)
         return(get_final_weekly_article(articles_text))
+        #return url
 
 def fetch_article(update, context):
     chat_id = update.message.chat_id
-    update.message.reply_text(get_keyword_article(context.args[0]))
+    search_text=""
+    for i in context.args:
+        search_text = search_text + " " +i
+    update.message.reply_text(get_keyword_article(search_text))
     
 #calls same function as weekly article generator    
 
@@ -135,7 +140,7 @@ def main():
     #day = datetime.datetime.now().strftime("%A")
     #time = int(datetime.datetime.now().strftime("%H"))
     
-    updater = Updater('1183471904:AAENQORzTAU_mTDXfv8xJU1s3rmK1PuzlpU', use_context=True)
+    updater = Updater('1113611813:AAFVKS1w12CKvzy5qVj-ZFRWnBwVckvVibc', use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
