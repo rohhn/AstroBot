@@ -169,7 +169,7 @@ def get_wiki_info(update, context):
 # ------------------------------------ PRINT HELP COMMANDS -------------------------------------#
 def bot_help(update, context):
     chat_id = update.message.chat_id
-    help_text = "Hello, these are the following commands I can respond to:\n\n/randomarticle - Fetches a random article related to an astronomy subject.\n\n/about <keyword> - fetches an article related to the keyword.\n\n/help - Provides you with the current list of commands I can respond to."
+    help_text = "Hello, these are the following commands I can respond to:\n\n/randomarticle - Fetches a random article related to an astronomy subject.\n\n/about <keyword> - Fetches an article related to the keyword.\n\n/wiki <keyword>- Produces a short summary and link to wikipedia\n\n/help - Provides you with the current list of commands I can respond to."
     update.message.reply_text(help_text)
     
 # ----------------------------------------------------------------------------------------------#
