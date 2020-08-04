@@ -151,10 +151,10 @@ def scrape_wiki(search_text):
         summary = wiki_page.find_all('p')
         for i in summary:
             if(len(i.get_text()) > 30):
-                summary = i.get_text()
-                break;
+                summary_text = i.get_text()
+                break
         #image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
-        text = summary + "\n\n" + wiki_link
+        text = summary_text + "\n\n" + wiki_link
         return(text)
 
 def get_wiki_info(update, context):

@@ -6,6 +6,10 @@ import smtplib
 import time
 import hashlib
 
+from telegram import Bot
+
+bot = Bot("1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc")
+
 while(True):
     url = "https://apod.nasa.gov/apod/astropix.html"
     response = requests.get(url)
@@ -30,6 +34,7 @@ while(True):
 
 
     if(old_date == new_date):
+        
         print("no change")
         continue
     else:

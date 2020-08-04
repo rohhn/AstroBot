@@ -6,6 +6,10 @@ import smtplib
 import time
 import hashlib
 
+from telegram import Bot
+
+bot = Bot("1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI") #photobot
+
 while(True):
     url = "https://apod.nasa.gov/apod/astropix.html"
     response = requests.get(url)
