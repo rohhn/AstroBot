@@ -18,8 +18,6 @@ while(True):
     old_image_url = "https://apod.nasa.gov/apod/"+old_page_text.find_all('center')[0].find('img')['src']
     old_title = old_page_text.find_all('center')[1].get_text().replace("\n","")
 
-    #print(time.time())
-    bot.sendMessage(chat_id="1045695336", text= "Going to sleep")
     time.sleep(3600)
     
     new_response = requests.get(url)
@@ -34,8 +32,8 @@ while(True):
         #bot.sendPhoto(chat_id="-1001331038106", photo=old_image_url, caption=str(old_title +"\nPicture taken on: " + old_date + "\n\n\ncourtesy of PhotoBot"))
         continue
     else:
-        bot.sendPhoto(chat_id="-1001284948052", photo=new_image_url, caption = str(new_title +"\nPicture taken on: " + new_date + "\n\n\ncourtesy of PhotoBot"))    
-        bot.sendMessage(chat_id="-1001331038106", text= ("Updated at: " + str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')))))
+        bot.sendPhoto(chat_id="1045695336", photo=new_image_url, caption = str(new_title +"\nPicture taken on: " + new_date + "\n\n\ncourtesy of PhotoBot"))    
+        bot.sendMessage(chat_id="1045695336", text= ("Updated at: " + str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')))))
         #bot.sendMessage()
         break
         

@@ -18,8 +18,9 @@ while(True):
     old_image_url = "https://apod.nasa.gov/apod/"+old_page_text.find_all('center')[0].find('img')['src']
     old_title = old_page_text.find_all('center')[1].get_text().replace("\n","")
 
-    print(time.time())
-    time.sleep(11500)
+    #print(time.time())
+    bot.sendMessage(chat_id="1045695336", text= "Going to sleep")
+    time.sleep(3600)
     
     new_response = requests.get(url)
     new_page_text = bs4(new_response.text, 'html.parser')
@@ -29,6 +30,7 @@ while(True):
 
 
     if(old_date == new_date):
+        bot.sendMessage(chat_id="1045695336", text= "no change")
         #bot.sendPhoto(chat_id="-1001331038106", photo=old_image_url, caption=str(old_title +"\nPicture taken on: " + old_date + "\n\n\ncourtesy of PhotoBot"))
         continue
     else:
