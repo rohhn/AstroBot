@@ -10,15 +10,19 @@ while(True):
     response = requests.get(url)
     page_text = bs4(response.text, 'html.parser')
     
-    date = page_text.find("p").contents[3].get_text().replace('\n','')
-    image_url = "https://apod.nasa.gov/apod/"+page_text.find_all('center')[0].find('img')['src']
-    title = page_text.find_all('center')[1].get_text().replace("\n","")
+    old_date = page_text.find("p").contents[3].get_text().replace('\n','')
+    old_image_url = "https://apod.nasa.gov/apod/"+page_text.find_all('center')[0].find('img')['src']
+    old_title = page_text.find_all('center')[1].get_text().replace("\n","")
+    
+    time.sleep(60)
+    
+    new_date = page_text.find("p").contents[3].get_text().replace('\n','')
+    new_image_url = "https://apod.nasa.gov/apod/"+page_text.find_all('center')[0].find('img')['src']
+    new_title = page_text.find_all('center')[1].get_text().replace("\n","")
     
 
-    if(date == page_text.find("p").contents[3].get_text().replace('\n','')):
-        print("sleeping")
-        time.sleep(60)
-        print("awake")
+    if(old_date == new_date):
+        print("no change")
         continue
     else:
         msg = "updated"
