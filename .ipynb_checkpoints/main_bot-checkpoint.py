@@ -149,6 +149,7 @@ def scrape_wiki(search_text):
         wiki_page = requests.get(wiki_link)
         wiki_page = bs4(wiki_page.text,'html.parser')
         summary = wiki_page.find_all('p')
+        summary_text=""
         for i in summary:
             if(len(i.get_text()) > 30):
                 summary_text = i.get_text()
