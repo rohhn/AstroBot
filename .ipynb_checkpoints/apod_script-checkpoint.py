@@ -1,21 +1,17 @@
 from bs4 import BeautifulSoup as bs4
-from telegram.ext import Updater
 import requests
-from better_profanity import profanity
-import smtplib
 import time
-import hashlib
-
 from telegram import Bot
+from datetime import datetime
+import pytz
 
-bot = Bot("1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc")
+bot = Bot("1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI") #photobot
 
 while(True):
     url = "https://apod.nasa.gov/apod/astropix.html"
     response = requests.get(url)
     page_text = bs4(response.text, 'html.parser')
     
-    #old_hash = hashlib.sha224(page_text).hexdigest()
     old_response = requests.get(url)
     old_page_text = bs4(old_response.text, 'html.parser')
     old_date = old_page_text.find("p").contents[3].get_text().replace('\n','')
@@ -23,9 +19,8 @@ while(True):
     old_title = old_page_text.find_all('center')[1].get_text().replace("\n","")
 
     print(time.time())
-    time.sleep(60)
+    time.sleep(11500)
     
-    #new_hash = hashlib.sha224(page_text).hexdigest()
     new_response = requests.get(url)
     new_page_text = bs4(new_response.text, 'html.parser')
     new_date = new_page_text.find("p").contents[3].get_text().replace('\n','')
@@ -34,26 +29,12 @@ while(True):
 
 
     if(old_date == new_date):
-        
-        print("no change")
+        #bot.sendPhoto(chat_id="-1001331038106", photo=old_image_url, caption=str(old_title +"\nPicture taken on: " + old_date + "\n\n\ncourtesy of PhotoBot"))
         continue
     else:
-        
-        #new_date = page_text.find("p").contents[3].get_text().replace('\n','')
-        #new_image_url = "https://apod.nasa.gov/apod/"+page_text.find_all('center')[0].find('img')['src']
-        #new_title = page_text.find_all('center')[1].get_text().replace("\n","")
-        msg = "apod updated"
-        toad = ['deshmukh.rohan06@gmail.com', 'singh.s.lakshya@gmail.com']
-        fromad = 'deshmukhr849@gmail.com'
-        
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login('deshmukhr849@gmail.com','dabaredyh')
-        
-        server.sendmail(fromad, toad, msg)
-        server.quit()
-        print("mail sent")
-        
+        bot.sendPhoto(chat_id="-1001284948052", photo=new_image_url, caption = str(new_title +"\nPicture taken on: " + new_date + "\n\n\ncourtesy of PhotoBot"))    
+        bot.sendMessage(chat_id="-1001331038106", text= ("Updated at: " + str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')))))
+        #bot.sendMessage()
         break
         
 #def main():
