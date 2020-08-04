@@ -194,10 +194,10 @@ def main():
         
     
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler('randomarticle',random_article))
-    dp.add_handler(CommandHandler('help',bot_help))
-    dp.add_handler(CommandHandler('about', fetch_article, pass_args=True))
-    dp.add_handler(CommandHandler('wiki',get_wiki_info))
+    dp.add_handler(CommandHandler('r',random_article))
+    dp.add_handler(CommandHandler('h',bot_help))
+    dp.add_handler(CommandHandler('a', fetch_article, pass_args=True))
+    dp.add_handler(CommandHandler('w',get_wiki_info))
     updater.start_polling()
     updater.idle()
 

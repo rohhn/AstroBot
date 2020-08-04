@@ -19,7 +19,7 @@ while(True):
     old_title = old_page_text.find_all('center')[1].get_text().replace("\n","")
 
     print(time.time())
-    time.sleep(86400)
+    time.sleep(60)
     
     #new_hash = hashlib.sha224(page_text).hexdigest()
     new_response = requests.get(url)
@@ -30,6 +30,7 @@ while(True):
 
 
     if(old_date == new_date):
+        
         print("no change")
         continue
     else:

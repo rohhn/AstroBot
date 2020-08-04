@@ -148,7 +148,11 @@ def scrape_wiki(search_text):
         wiki_link = get_wiki_link(search_text)
         wiki_page = requests.get(wiki_link)
         wiki_page = bs4(wiki_page.text,'html.parser')
-        summary = wiki_page.find_all('p')[1].get_text()
+        summary = wiki_page.find_all('p')
+        for i in summary:
+            if(len(i.get_text()) > 30):
+                summary = i.get_text()
+                break;
         #image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
         text = summary + "\n\n" + wiki_link
         return(text)
@@ -174,8 +178,8 @@ def bot_help(update, context):
 
 def main():
     
-    token ='1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc'
-    group_id = '-1001284948052'
+    token ='1183471904:AAENQORzTAU_mTDXfv8xJU1s3rmK1PuzlpU'
+    group_id = '-100128492348052'
     updater = Updater(token, use_context=True)
     bot = Bot(token)
     
