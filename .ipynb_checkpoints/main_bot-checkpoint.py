@@ -1,11 +1,13 @@
 from bs4 import BeautifulSoup as bs4
 import requests
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
-import datetime
+from datetime import datetime
 import random
 import re
 from better_profanity import profanity
-
+from telegram import Bot
+import pytz
+import time
 
 
 
@@ -87,17 +89,13 @@ def get_final_weekly_article(articles_text):
     return(data[0][0])
 
 
-def get_weekly_article():
-    day = datetime.datetime.now().strftime("%A")
-    time = int(datetime.datetime.now().strftime("%H"))
-    if day == 'Monday' and time == 13:
+def get_weekly_article(day):
+    if day == 'Tuesday':
         keyword = weekly_topics[0]
-    elif day == 'Wednesday' and time == 16:
+    elif day == 'Wednesday':
         keyword = weekly_topics[1]
-    elif day == 'Friday' and time == 16:
+    elif day == 'Friday':
         keyword = weekly_topics[2]
-    else:
-        return("No article today.")
         
     url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
     articles_text = scrape(url)
@@ -175,10 +173,17 @@ def bot_help(update, context):
 # ----------------------------------------------------------------------------------------------#
 
 def main():
-    #day = datetime.datetime.now().strftime("%A")
-    #time = int(datetime.datetime.now().strftime("%H"))
     
-    updater = Updater('1113611813:AAFVKS1w12CKvzy5qVj-ZFRWnBwVckvVibc', use_context=True)
+    #while(True):
+    updater = Updater('1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc', use_context=True)
+    bot = Bot('1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc')
+    #print("day :",str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")),"\ntime:",int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")))
+    if str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Tuesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 14:
+        bot.sendMessage(chat_id="-1001331038106", text = get_weekly_article('Tuesday'))
+    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Wednesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
+        bot.sendMessage(chat_id="-1001331038106", text = get_weekly_article('Wednesday'))
+    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Friday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
+        bot.sendMessage(chat_id="-1001331038106", text = get_weekly_article('Friday'))
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
@@ -187,6 +192,7 @@ def main():
     #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
     updater.start_polling()
     updater.idle()
+    #time.sleep(5)
 
 if __name__ == '__main__':
     main()
