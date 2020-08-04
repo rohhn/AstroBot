@@ -32,17 +32,17 @@ def get_time(i):
     posted_time = i.find(class_ = "r0bn4c rQMQod").contents[0]
     posted_time = posted_time.split(" ")
     if (posted_time[1] == 'mins' or posted_time[1] == 'min'):
-        time_since = 0.1 * int(posted_time[0])
+        time_since = int(posted_time[0])
     if (posted_time[1] == 'hours' or posted_time[1] == 'hour'):
-        time_since = 1 * int(posted_time[0])
+        time_since = 60 * int(posted_time[0])
     elif (posted_time[1] == 'days' or posted_time[1] == 'day'):
-        time_since = 10 * int(posted_time[0])
+        time_since = 24*60 * int(posted_time[0])
     elif (posted_time[1] == 'weeks' or posted_time[1] == 'week'):
-        time_since = 100* int(posted_time[0])
+        time_since = 7*24*60* int(posted_time[0])
     #elif (posted_time[1] == 'months' or posted_time[1] == 'month'):
     #    time_since = 100* int(posted_time[0])
     else:
-        time_since = 9999
+        time_since = 9999999
     return(time_since)
 
 # ---------------------- HELPER FUNCTIONS ------------------------#
@@ -52,7 +52,7 @@ def get_time(i):
 # ------------------- GENERATE RANDOM ARTICLES FROM POOL OF TOPICS ----------------------#
 
 #Topics for random article generator
-random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory']
+random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory','astrophysics', 'Cosmology', 'Astrophotography']
 
 def get_final_random_article(articles_text):
     data = []
@@ -90,7 +90,7 @@ def get_final_weekly_article(articles_text):
 
 
 def get_weekly_article(day):
-    if day == 'Tuesday':
+    if day == 'Sunday':
         keyword = weekly_topics[0]
     elif day == 'Wednesday':
         keyword = weekly_topics[1]
@@ -174,25 +174,29 @@ def bot_help(update, context):
 
 def main():
     
-    #while(True):
-    updater = Updater('1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc', use_context=True)
-    bot = Bot('1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc')
-    #print("day :",str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")),"\ntime:",int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")))
-    if str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Tuesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 14:
-        bot.sendMessage(chat_id="-1001331038106", text = get_weekly_article('Tuesday'))
+    token ='1113611813:AAFVKS1w12CKvzy5qVj-ZFRWnBwVckvVibc'
+    group_id = '-1001284948052'
+    updater = Updater(token, use_context=True)
+    bot = Bot(token)
+    
+    #WEEKLY ARTICLE GENERATOR TRIGGER
+    if str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Sunday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
+        bot.sendMessage(chat_id=group_id, text = get_weekly_article('Sunday'))
     elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Wednesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
-        bot.sendMessage(chat_id="-1001331038106", text = get_weekly_article('Wednesday'))
+        bot.sendMessage(chat_id=group_id, text = get_weekly_article('Wednesday'))
     elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Friday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
-        bot.sendMessage(chat_id="-1001331038106", text = get_weekly_article('Friday'))
+        bot.sendMessage(chat_id=group_id, text = get_weekly_article('Friday'))
+        
+        
+    
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
     dp.add_handler(CommandHandler('about', fetch_article, pass_args=True))
     dp.add_handler(CommandHandler('wiki',get_wiki_info))
-    #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
     updater.start_polling()
     updater.idle()
-    #time.sleep(5)
+
 
 if __name__ == '__main__':
     main()
