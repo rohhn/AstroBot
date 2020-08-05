@@ -29,7 +29,7 @@ while(True):
 
     #print(time.time())
     bot.sendMessage(chat_id="1045695336", text= "Going to sleep")
-    time.sleep(30)
+    time.sleep(3600)
     
     new_response = requests.get(url)
     new_page_text = bs4(new_response.text, 'html.parser')
