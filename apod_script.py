@@ -7,6 +7,15 @@ import pytz
 
 bot = Bot("1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI") #photobot
 
+def get_url(page_text):
+    if(page_text.find('img')):
+        url = "https://apod.nasa.gov/apod/"+page_text.find_all('center')[0].find('img')['src']
+        return(url)
+    elif(page_text.find('iframe')):
+        url = page_text.find_all('center')[0].find('iframe')['src']
+        return url
+        
+
 while(True):
     url = "https://apod.nasa.gov/apod/astropix.html"
     response = requests.get(url)
@@ -15,18 +24,19 @@ while(True):
     old_response = requests.get(url)
     old_page_text = bs4(old_response.text, 'html.parser')
     old_date = old_page_text.find("p").contents[3].get_text().replace('\n','')
-    old_image_url = "https://apod.nasa.gov/apod/"+old_page_text.find_all('center')[0].find('img')['src']
-    old_title = old_page_text.find_all('center')[1].get_text().replace("\n","")
+    #old_image_url = get_url(old_page_text)
+    #old_title = old_page_text.find_all('center')[1].get_text().replace("\n","")
 
     #print(time.time())
     bot.sendMessage(chat_id="1045695336", text= "Going to sleep")
-    time.sleep(3600)
+    time.sleep(30)
     
     new_response = requests.get(url)
     new_page_text = bs4(new_response.text, 'html.parser')
     new_date = new_page_text.find("p").contents[3].get_text().replace('\n','')
-    new_image_url = "https://apod.nasa.gov/apod/"+new_page_text.find_all('center')[0].find('img')['src']
+    new_image_url = get_url(new_page_text)
     new_title = new_page_text.find_all('center')[1].get_text().replace("\n","")
+    new_explanation = new_page_text.find_all('p')[2].get_text().replace("\n","").split("Tomorrow")[0]
 
 
     if(old_date == new_date):
@@ -34,7 +44,11 @@ while(True):
         #bot.sendPhoto(chat_id="-1001331038106", photo=old_image_url, caption=str(old_title +"\nPicture taken on: " + old_date + "\n\n\ncourtesy of PhotoBot"))
         continue
     else:
-        bot.sendPhoto(chat_id="-1001284948052", photo=new_image_url, caption = str(new_title +"\nPicture taken on: " + new_date + "\n\n\ncourtesy of PhotoBot"))    
+        if(page_text.find('img')):
+            bot.sendPhoto(chat_id="-1001284948052", photo=new_image_url, caption = str(new_title +"\nPicture taken on: " + new_date + "\n\n\ncourtesy of PhotoBot"))
+        elif(page_text.find('iframe')):
+            message = ("<a href=\""+new_image_url+"\">" +"<b>Astronomy Picture of the Day</b></a>\n\n" +"\n" +new_explanation+"\n<i>Date: "+new_date+"</i>\n")
+            bot.sendMessage(chat_id="-1001284948052", text=message, parse_mode='HTML')
         bot.sendMessage(chat_id="-1001331038106", text= ("Updated at: " + str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')))))
         #bot.sendMessage()
         break
