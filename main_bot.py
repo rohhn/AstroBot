@@ -180,7 +180,7 @@ def bot_help(update, context):
 def main():
     
     token ='1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc'
-    group_id = '-100128492348052'
+    group_id = '-1001284948052'
     updater = Updater(token, use_context=True)
     bot = Bot(token)
     
