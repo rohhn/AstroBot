@@ -57,7 +57,7 @@ random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+h
 def get_final_random_article(articles_text):
     data = []
     for i in articles_text: 
-        data.append([get_article_url(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+        data.append([get_article_url(i),get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
     data = sorted(data, key = lambda x: x[1])
     i = random.randrange(0,len(articles_text),1)
     return(data[i][0])
@@ -185,12 +185,12 @@ def main():
     bot = Bot(token)
     
     #WEEKLY ARTICLE GENERATOR TRIGGER
-    if str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Sunday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
-        bot.sendMessage(chat_id=group_id, text = get_weekly_article('Sunday'))
-    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Wednesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
-        bot.sendMessage(chat_id=group_id, text = get_weekly_article('Wednesday'))
-    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Friday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 16:
-        bot.sendMessage(chat_id=group_id, text = get_weekly_article('Friday'))
+    if str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Sunday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 17:
+        bot.sendMessage(chat_id=group_id, text = str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) +"\'s article\n\n"+get_weekly_article('Sunday'))
+    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Wednesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 17:
+        bot.sendMessage(chat_id=group_id, text = str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) +"\'s article\n\n"+get_weekly_article('Wednesday'))
+    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Friday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 17:
+        bot.sendMessage(chat_id=group_id, text = str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) +"\'s article\n\n"+get_weekly_article('Friday'))
         
         
     
