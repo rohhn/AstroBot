@@ -8,7 +8,7 @@ import hashlib
 import re
 
 bot = Bot("1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI") #photobot
-group_id = "-1001331038106" #"-1001284948052"
+group_id ="-1001284948052"# "-1001331038106" #
 
 def get_url(page_text):
     if(page_text.find('img')):
@@ -36,17 +36,6 @@ def sendmessage(response):
         message = ("<a href=\""+url+"\">" +"<b>Astronomy Picture of the Day</b></a>\n\n" +"\n" +explanation+"\n<i>Date: "+date+"</i>\n")
         bot.sendMessage(chat_id=group_id, text=message, parse_mode='HTML')
         
-def fetch_picture(update, context):
-    chat_id = update.message.chat_id
-    search_text=""
-    for i in context.args:
-        search_text = search_text + "+" + i
-    search_text = search_text + "+picture"
-    url="http://www.google.com/search?q="+ search_text +"&rlz=1C5CHFA_enIN908IN908&source=lnms&tbm=isch&sa=X&ved=2ahUKEwjkxYHbzYTrAhVTSX0KHZSHDvYQ_AUoAXoECA4QAw&biw=1261&bih=914&safe=active"
-    page_text = requests.get(url)
-    page_text = bs4(page_text.text, 'html.parser')
-    image_url = page_text.find_all(class_ ="TxbwNb")[0].find('img')['src']
-    update.message.reply_photo(image_url)
 
 while(True):
     url = "https://apod.nasa.gov/apod/astropix.html"
@@ -67,21 +56,3 @@ while(True):
         sendmessage(new_response)
         bot.sendMessage(chat_id="-1001331038106", text= ("Updated at: " + str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')))))
         break
-
-        
-def main():
-    
-    
-    
-    token ='1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc'
-    group_id = '-1001284948052'
-    updater = Updater(token, use_context=True)
-    
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler('picture',fetch_picture))
-    updater.start_polling()
-    updater.idle()
-
-
-if __name__ == '__main__':
-    main()
