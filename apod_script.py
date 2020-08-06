@@ -43,7 +43,7 @@ while(True):
     old_hash = hashlib.md5(old_response.text.encode('utf-8')).hexdigest()
     
     bot.sendMessage(chat_id="1045695336", text= "Going to sleep")
-    time.sleep(10)
+    time.sleep(3600)
     
     new_response = requests.get(url)
     new_hash = hashlib.md5(new_response.text.encode('utf-8')).hexdigest()
