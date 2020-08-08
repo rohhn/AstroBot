@@ -9,7 +9,7 @@ import re
 from telegram.ext import Updater, CommandHandler, JobQueue
 from better_profanity import profanity
 
-token = "1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"
+token = "1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI"
 
 indt = pytz.timezone("Asia/Kolkata")
 
