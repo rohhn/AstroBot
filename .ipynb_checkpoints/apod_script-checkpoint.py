@@ -45,7 +45,7 @@ def sendmessage(bot,job):
 
 def daily_job(bot, update, job_queue):
     bot.sendMessage(chat_id=update.message.chat_id, text="started")
-    job_queue.run_daily(sendmessage,time=datetime.time(0,6,0,tzinfo=indt), context=update)
+    job_queue.run_daily(sendmessage,time=datetime.time(11,23,0,tzinfo=indt), context=update)
 
 def stop_func(bot, update, job_queue):
     bot.sendMessage(chat_id=update.message.chat_id,
