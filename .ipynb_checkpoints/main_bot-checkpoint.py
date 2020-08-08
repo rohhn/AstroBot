@@ -92,7 +92,7 @@ def get_final_weekly_article(articles_text):
 
 
 def get_weekly_article():
-    day = time_now = datetime.now().astimezone(ind_tz).strftime("%A")
+    day = datetime.now().astimezone(ind_tz).strftime("%A")
     if day == 'Sunday':
         keyword = weekly_topics[0]
     elif day == 'Wednesday':
