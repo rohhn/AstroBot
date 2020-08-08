@@ -9,8 +9,10 @@ from telegram import Bot
 import pytz
 import time
 
-
-
+token ='1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc'
+group_id = '-1001284948052'
+bot = Bot(token)
+ind_tz = pytz.timezone('Asia/Kolkata')
 
 
 # --------------------- HELPER FUNCTIONS ------------------------#
@@ -89,7 +91,8 @@ def get_final_weekly_article(articles_text):
     return(data[0][0])
 
 
-def get_weekly_article(day):
+def get_weekly_article():
+    day = time_now = datetime.now().astimezone(ind_tz).strftime("%A")
     if day == 'Sunday':
         keyword = weekly_topics[0]
     elif day == 'Wednesday':
@@ -102,9 +105,9 @@ def get_weekly_article(day):
     return(get_final_weekly_article(articles_text))
 
 #BOT CALLED FUNCTION
-#def weekly_article(update, context):
-#    chat_id = update.message.chat_id
-#    update.message.reply_text(get_weekly_article())
+def weekly_article(update, context):
+    chat_id = update.message.chat_id
+    update.message.reply_text(get_weekly_article())
 
 # --------------------------------------------------------------------------------------------#
 
@@ -112,8 +115,10 @@ def get_weekly_article(day):
 def get_keyword_article(keyword):
     if(profanity.contains_profanity(keyword)):
         return "BAZINGA!"
+    elif(keyword==""):
+        return("Please enter a keyword for search.")
     else:
-        keyword = keyword.replace(" ","+")
+        #keyword = keyword.replace(" ","+")
         url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
         articles_text = scrape(url)
         return(get_final_weekly_article(articles_text))
@@ -143,7 +148,9 @@ def get_wiki_link(search_text):
 
 def scrape_wiki(search_text):
     if(profanity.contains_profanity(search_text)):
-        return("BAZINGA!")
+        return("censored.")
+    elif(search_text == '+wiki'):
+        return("Please include keyword for search")
     else:
         wiki_link = get_wiki_link(search_text)
         wiki_page = requests.get(wiki_link)
@@ -179,18 +186,16 @@ def bot_help(update, context):
 
 def main():
     
-    token ='1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc'
-    group_id = '-1001284948052'
-    updater = Updater(token, use_context=True)
-    bot = Bot(token)
+    updater = Updater(token, use_context= True)
+    time_now = datetime.now().astimezone(ind_tz)
     
     #WEEKLY ARTICLE GENERATOR TRIGGER
-    if str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Sunday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 17:
-        bot.sendMessage(chat_id=group_id, text = str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) +"\'s article\n\n"+get_weekly_article('Sunday'))
-    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Wednesday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 17:
-        bot.sendMessage(chat_id=group_id, text = str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) +"\'s article\n\n"+get_weekly_article('Wednesday'))
-    elif str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) == 'Friday' and int(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%H")) == 17:
-        bot.sendMessage(chat_id=group_id, text = str(datetime.now().astimezone(pytz.timezone('Asia/Kolkata')).strftime("%A")) +"\'s article\n\n"+get_weekly_article('Friday'))
+    if str(time_now.strftime("%A")) == 'Sunday' and int(time_now.strftime("%H")) == 17:
+        bot.sendMessage(chat_id=group_id, text = str(time_now.strftime("%A")) +"\'s article\n\n"+weekly_article())
+    elif str(time_now.strftime("%A")) == 'Wednesday' and int(time_now.strftime("%H")) == 17:
+        bot.sendMessage(chat_id=group_id, text = str(time_now.strftime("%A")) +"\'s article\n\n"+weekly_article())
+    elif str(time_now.strftime("%A")) == 'Friday' and int(time_now.strftime("%H")) == 17:
+        bot.sendMessage(chat_id=group_id, text = str(time_now.strftime("%A")) +"\'s article\n\n"+weekly_article())
         
         
     

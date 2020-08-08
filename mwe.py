@@ -5,12 +5,12 @@ from telegram.ext import Updater, CommandHandler, JobQueue
 indt = pytz.timezone("Asia/Kolkata")
     
 def sendamessage(bot,job):
-    bot.sendMessage(chat_id=job.context.message.chat_id, text="system: "+str(datetime.datetime.now()) + "\nIndia: \n"+str(datetime.datetime.now().astimezone(indt).strftime("%H"))+" - "+str(datetime.datetime.now().astimezone(indt).strftime("%M"))+" - "+str(datetime.datetime.now().astimezone(indt).strftime("%S"))+datetime.datetime.time(22,15,0,0, tzinfo=indt))
+    bot.sendMessage(chat_id=job.context.message.chat_id, text="system: "+str(datetime.datetime.now()) + "\nIndia: \n"+str(datetime.datetime.now().astimezone(indt))+str(datetime.time(hour=17,minute=15,second=0, tzinfo=indt)))
     
 
 def daily_job(bot, update, job_queue):
     bot.sendMessage(chat_id=update.message.chat_id, text=("started"))
-    job_queue.run_repeating(sendamessage,60, context=update) #time= datetime.time(13,00,0,0, tzinfo=indt), context=update)
+    job_queue.run_daily(sendamessage,datetime.time(16,20,0,tzinfo=indt), context=update) #time= datetime.time(13,00,0,0, tzinfo=indt), context=update)
 
 def stop_bot(bot, update, job_queue):
     bot.sendMessage(chat_id=update.message.chat_id,
