@@ -3,17 +3,17 @@
 
 # In[114]:
 
-
-import pandas as pd
 from bs4 import BeautifulSoup as bs4
 import requests
-import json
-from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, InlineQueryHandler, CommandHandler, CallbackContext
+from telegram import Bot
+import re
 import datetime
+import pytz
 
 topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
-
-# In[172]:
+token = '1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'
+indt = pytz.timezone("Asia/Kolkata")
 
 
 def scrape(url):
@@ -22,17 +22,11 @@ def scrape(url):
     articles_text = page_text.find_all(class_ = "ZINbbc xpd O9g5cc uUPGi")
     return articles_text
 
-
-# In[173]:
-
-
-def get_url(i):
-    i = i.find('a').attrs['href'].replace('/url?q=','')
-    return i
-
-
-# In[174]:
-
+def get_article_url(url):
+    #
+    url = url.find('a').attrs['href'].replace('/url?q=','')
+    url = url.split("&sa")[0]
+    return url
 
 def get_time(i):
     posted_time = i.find(class_ = "r0bn4c rQMQod").contents[0]
@@ -45,60 +39,43 @@ def get_time(i):
         time_since = 999
     return(time_since)
 
-
-# In[175]:
-
-
 def get_final_article(articles_text):
     data = []
     for i in articles_text: 
-        data.append([get_url(i),get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+        data.append([get_article_url(i),get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
     data = sorted(data, key = lambda x: x[1])
     return(data[0][0])
 
-
-# In[176]:
-
-
-def get_article():
+def send_article(context):
     day = datetime.datetime.now().strftime("%A")
-    time = int(datetime.datetime.now().strftime("%H"))
-    if day == 'Sunday' and time == 16:
+    #time = int(datetime.datetime.now().strftime("%H"))
+    if day == 'Sunday':
         keyword = topics[0]
-    elif day == 'Monday' and time == 9:
+    elif day == 'Wednesday':
         keyword = topics[1]
-    elif day == 'Monday' and time == 10:
+    elif day == 'Thursday':
         keyword = topics[2]
-    else:
-        return("no article today")
         
     url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
-    return(get_final_article(articles_text))
-
-# In[177]:
+    context.bot.sendMessage(chat_id = context.job.context,text = get_final_article(articles_text))
 
 
-#print(get_article())
-
-def test(update, context):
-    update.message.reply_text(update.message.text)
-
-
-# In[ ]:
-
-def article(update, context):
-    #get_article()
-    chat_id = update.message.chat_id
-    #update.message.reply_text(get_article())
-    #bot.send_message(chat_id=chat_id, text=get_article())
-    update.message.reply_text(get_article())
+def get_article(update,context):
+    context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
+    context.job_queue.run_daily(send_article, time = datetime.time(12,52,0,tzinfo=indt), days= (0,3,5), context = update.message.chat_id)
+    
+def stop_func(bot, update, job_queue):
+    bot.sendMessage(chat_id=update.message.chat_id,
+                      text='stopped')
+    job_queue.stop()
 
 
 def main():
-    updater = Updater('1183471904:AAENQORzTAU_mTDXfv8xJU1s3rmK1PuzlpU', use_context=True)
+    updater = Updater(token, use_context = True)
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler('newarticle',article))
+    dp.add_handler(CommandHandler('weekly_articles',get_article, pass_job_queue = True))
+    dp.add_handler(CommandHandler('stop_weekly_articles',stop_func, pass_job_queue = True))
     #dp.add_handler(MessageHandler(~Filters.command & Filters.text, test))
     updater.start_polling()
     updater.idle()

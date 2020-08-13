@@ -1,15 +1,13 @@
 from bs4 import BeautifulSoup as bs4
 import requests
-import time
 from telegram import Bot
 import datetime
 import pytz
 import hashlib
 import re
 from telegram.ext import Updater, CommandHandler, JobQueue
-from better_profanity import profanity
 
-token = "1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI"
+token = "1163369796:AAGmNm8peqmRL7Bf9LPwg5RYsqDfs9LHbrQ"
 
 indt = pytz.timezone("Asia/Kolkata")
 
@@ -36,16 +34,17 @@ def sendmessage(bot,job):
     title = get_title(page_text)
     explanation = page_text.find_all('p')[2].get_text().replace("\n","").split("Tomorrow")[0].split("Explanation: ")[1]
     if(page_text.find('img')):
-        bot.sendPhoto(chat_id=job.context.message.chat_id, photo=url, caption = str("APOD: "+title+"\n\n"+explanation+"\nDate: " + date))
+        bot.sendPhoto(chat_id=job.context, photo=url, caption = str("APOD: "+title+"\n\n"+explanation+"\nDate: " + date))
     elif(page_text.find('iframe')):
         message = ("<a href=\""+url+"\">" +"<b>Astronomy Picture of the Day</b></a>\n\n" +"\n" +explanation+"\n<i>Date: "+date+"</i>\n")
-        bot.sendMessage(chat_id=job.context.message.chat_id, text=message, parse_mode='HTML')
+        bot.sendMessage(chat_id=job.context, text=message, parse_mode='HTML')
     return()
     
 
 def daily_job(bot, update, job_queue):
     bot.sendMessage(chat_id=update.message.chat_id, text="started")
-    job_queue.run_daily(sendmessage,time=datetime.time(11,23,0,tzinfo=indt), context=update)
+    job_queue.run_daily(sendmessage,time=datetime.time(11,23,0,tzinfo=indt), context=update.message.chat_id)
+    #job_queue.run_repeating(testing, 10, context=update)
 
 def stop_func(bot, update, job_queue):
     bot.sendMessage(chat_id=update.message.chat_id,

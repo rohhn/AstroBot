@@ -9,7 +9,7 @@ import re
 from telegram.ext import Updater, CommandHandler
 from better_profanity import profanity
 
-token = "1163369796:AAE1BI447fKiuDQ9RUTCUZKcS7-Ek96zlYI"
+token = "1163369796:AAGmNm8peqmRL7Bf9LPwg5RYsqDfs9LHbrQ"
 #bot = Bot(token) #photobot
 group_id = "-1001331038106" #"-1001284948052"
 

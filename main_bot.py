@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs4
 import requests
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
-from datetime import datetime
+import datetime
 import random
 import re
 from better_profanity import profanity
@@ -9,8 +9,8 @@ from telegram import Bot
 import pytz
 import time
 
-token ='1222703294:AAEnBuUwV4H8GSv-h2e3Jgfv77QMqpTRsVc'
-group_id = '-1001284948052'
+token ='1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'
+#group_id = '-1001284948052'
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -80,34 +80,40 @@ def random_article(update, context):
 
 # ------------- GENERATE 3 ARTICLES PER WEEK (SUNDAY, WEDNESDAY, FRIDAY) ---------------- #
 
-#topics for 3 weekly articles
-weekly_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
+topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
 
-def get_final_weekly_article(articles_text):
+def get_final_article(articles_text):
     data = []
     for i in articles_text: 
         data.append([get_article_url(i),get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
     data = sorted(data, key = lambda x: x[1])
     return(data[0][0])
 
-
-def get_weekly_article():
-    day = datetime.now().astimezone(ind_tz).strftime("%A")
+def send_article(context):
+    day = datetime.datetime.now().strftime("%A")
+    #time = int(datetime.datetime.now().strftime("%H"))
     if day == 'Sunday':
-        keyword = weekly_topics[0]
+        keyword = topics[0]
     elif day == 'Wednesday':
-        keyword = weekly_topics[1]
+        keyword = topics[1]
     elif day == 'Friday':
-        keyword = weekly_topics[2]
+        keyword = topics[2]
         
-    url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
+    url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
-    return(get_final_weekly_article(articles_text))
+    context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
 
-#BOT CALLED FUNCTION
-def weekly_article(update, context):
-    chat_id = update.message.chat_id
-    update.message.reply_text(get_weekly_article())
+
+def get_article(update,context):
+    context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
+    context.job_queue.run_daily(send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), days= (0,3,5), context = update.message.chat_id)
+    
+def stop_func(update, context):
+    context.bot.sendMessage(chat_id=update.message.chat_id,
+                      text='stopped')
+    job_queue.stop()
+
+
 
 # --------------------------------------------------------------------------------------------#
 
@@ -121,7 +127,7 @@ def get_keyword_article(keyword):
         #keyword = keyword.replace(" ","+")
         url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
         articles_text = scrape(url)
-        return(get_final_weekly_article(articles_text))
+        return(get_final_article(articles_text))
         #return url
 
 def fetch_article(update, context):
@@ -179,30 +185,23 @@ def get_wiki_info(update, context):
 # ------------------------------------ PRINT HELP COMMANDS -------------------------------------#
 def bot_help(update, context):
     chat_id = update.message.chat_id
-    help_text = "Hello, these are the following commands I can respond to:\n\n/randomarticle - Fetches a random article related to an astronomy subject.\n\n/about <keyword> - Fetches an article related to the keyword.\n\n/wiki <keyword>- Produces a short summary and link to wikipedia\n\n/help - Provides you with the current list of commands I can respond to."
+    help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/newarticle <keyword>\" will fetch an article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
     update.message.reply_text(help_text)
     
 # ----------------------------------------------------------------------------------------------#
 
+
+
 def main():
     
-    updater = Updater(token, use_context= True)
-    time_now = datetime.now().astimezone(ind_tz)
-    
-    #WEEKLY ARTICLE GENERATOR TRIGGER
-    if str(time_now.strftime("%A")) == 'Sunday' and int(time_now.strftime("%H")) == 17:
-        bot.sendMessage(chat_id=group_id, text = str(time_now.strftime("%A")) +"\'s article\n\n"+weekly_article())
-    elif str(time_now.strftime("%A")) == 'Wednesday' and int(time_now.strftime("%H")) == 17:
-        bot.sendMessage(chat_id=group_id, text = str(time_now.strftime("%A")) +"\'s article\n\n"+weekly_article())
-    elif str(time_now.strftime("%A")) == 'Friday' and int(time_now.strftime("%H")) == 17:
-        bot.sendMessage(chat_id=group_id, text = str(time_now.strftime("%A")) +"\'s article\n\n"+weekly_article())
-        
-        
+    updater = Updater(token, use_context= True) 
     
     dp = updater.dispatcher
+    dp.add_handler(CommandHandler('weekly_articles',get_article, pass_job_queue = True))
+    dp.add_handler(CommandHandler('stop_weekly_articles',stop_func, pass_job_queue = True))
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
-    dp.add_handler(CommandHandler('about', fetch_article, pass_args=True))
+    dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
     dp.add_handler(CommandHandler('wiki',get_wiki_info))
     updater.start_polling()
     updater.idle()
