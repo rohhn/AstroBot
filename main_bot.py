@@ -9,8 +9,7 @@ from telegram import Bot
 import pytz
 import time
 
-token ='1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'
-#group_id = '-1001284948052'
+token = '1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -90,27 +89,24 @@ def get_final_article(articles_text):
     return(data[0][0])
 
 def send_article(context):
-    day = datetime.datetime.now().strftime("%A")
+    day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
     #time = int(datetime.datetime.now().strftime("%H"))
     if day == 'Sunday':
-        keyword = topics[0]
+        topic_day = topics[0]
     elif day == 'Wednesday':
-        keyword = topics[1]
+        topic_day = topics[1]
     elif day == 'Friday':
-        keyword = topics[2]
+        topic_day = topics[2]
         
-    url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
+    url = "https://www.google.com/search?q="+topic_day+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
-    try:
-        context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
-    except: 
-        print("error")
+    context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
     return()
 
 
 def get_article(update,context):
     context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
-    context.job_queue.run_daily(send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), days= (0,3,5), context = update.message.chat_id)
+    context.job_queue.run_daily(send_article, time = datetime.time(17,35,0,tzinfo=ind_tz), days= (0,3,5), context = update.message.chat_id)
     
 def stop_func(update, context):
     context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
@@ -123,7 +119,7 @@ def stop_func(update, context):
 # ----------------------- FETCH ARTICLE BASED ON KEYWORDS BY USER --------------------------- #
 def get_keyword_article(keyword):
     if(profanity.contains_profanity(keyword)):
-        return "BAZINGA!"
+        return "no results"
     elif(keyword==""):
         return("Please enter a keyword for search.")
     else:
@@ -159,7 +155,7 @@ def scrape_wiki(search_text):
     if(profanity.contains_profanity(search_text)):
         return("censored.")
     elif(search_text == '+wiki'):
-        return("Please include keyword for search")
+        return("Please include keyword for search.")
     else:
         wiki_link = get_wiki_link(search_text)
         wiki_page = requests.get(wiki_link)
@@ -207,7 +203,7 @@ def main():
     dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
     dp.add_handler(CommandHandler('wiki',get_wiki_info))
     updater.start_polling()
-    updater.idle()
+    #updater.idle()
 
 
 if __name__ == '__main__':
