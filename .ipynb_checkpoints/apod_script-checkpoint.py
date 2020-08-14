@@ -35,7 +35,7 @@ def sendmessage(context):
     explanation = page_text.find_all('p')[2].get_text().replace("\n","").split("Tomorrow")[0].split("Explanation: ")[1]
     if(page_text.find('img')):
         try:
-            context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str("APOD: "+title+"\n\n"+explanation+"\nDate: " + date))
+            context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str("APOD - "+title+"\n\n"+explanation+"\nDate: " + date))
         except:
             message = ("<a href=\""+url+"\">" +"<b>APOD - " + title + "</b></a>\n\n" +"\n" +explanation+"\n<i>Date: "+date+"</i>\n")
             context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')

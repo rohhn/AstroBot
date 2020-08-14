@@ -101,7 +101,11 @@ def send_article(context):
         
     url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
-    context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
+    try:
+        context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
+    except: 
+        print("error")
+    return()
 
 
 def get_article(update,context):
@@ -109,8 +113,7 @@ def get_article(update,context):
     context.job_queue.run_daily(send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), days= (0,3,5), context = update.message.chat_id)
     
 def stop_func(update, context):
-    context.bot.sendMessage(chat_id=update.message.chat_id,
-                      text='stopped')
+    context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
     job_queue.stop()
 
 
