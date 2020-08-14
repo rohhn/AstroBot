@@ -25,7 +25,7 @@ def get_title(page_text):
     elif(page_text.find('iframe')):
         return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n","").split("Video")[0]))
     
-def sendmessage(bot,job):
+def sendmessage(context):
     url = "https://apod.nasa.gov/apod/astropix.html"
     response = requests.get(url)
     page_text = bs4(response.text,'html.parser')
@@ -34,25 +34,29 @@ def sendmessage(bot,job):
     title = get_title(page_text)
     explanation = page_text.find_all('p')[2].get_text().replace("\n","").split("Tomorrow")[0].split("Explanation: ")[1]
     if(page_text.find('img')):
-        bot.sendPhoto(chat_id=job.context, photo=url, caption = str("APOD: "+title+"\n\n"+explanation+"\nDate: " + date))
+        try:
+            context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str("APOD: "+title+"\n\n"+explanation+"\nDate: " + date))
+        except:
+            message = ("<a href=\""+url+"\">" +"<b>APOD - " + title + "</b></a>\n\n" +"\n" +explanation+"\n<i>Date: "+date+"</i>\n")
+            context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
     elif(page_text.find('iframe')):
-        message = ("<a href=\""+url+"\">" +"<b>Astronomy Picture of the Day</b></a>\n\n" +"\n" +explanation+"\n<i>Date: "+date+"</i>\n")
-        bot.sendMessage(chat_id=job.context, text=message, parse_mode='HTML')
+        message = ("<a href=\""+url+"\">" +"<b>APOD - " + title + "</b></a>\n\n" +"\n" +explanation+"\n<i>Date: "+date+"</i>\n")
+        context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
     return()
     
 
-def daily_job(bot, update, job_queue):
-    bot.sendMessage(chat_id=update.message.chat_id, text="started")
-    job_queue.run_daily(sendmessage,time=datetime.time(11,23,0,tzinfo=indt), context=update.message.chat_id)
+def daily_job(update, context):
+    context.bot.sendMessage(chat_id=update.message.chat_id, text="started")
+    context.job_queue.run_daily(sendmessage,time=datetime.time(11,23,0,tzinfo=indt), context=update.message.chat_id)
     #job_queue.run_repeating(testing, 10, context=update)
 
-def stop_func(bot, update, job_queue):
-    bot.sendMessage(chat_id=update.message.chat_id,
+def stop_func(update, context):
+    context.bot.sendMessage(chat_id=update.message.chat_id,
                       text='stopped')
     job_queue.stop()
 
 def main():
-    updater = Updater(token)
+    updater = Updater(token, use_context= True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('startapod', daily_job, pass_job_queue=True))
     dp.add_handler(CommandHandler('stopapod', stop_func, pass_job_queue=True))
