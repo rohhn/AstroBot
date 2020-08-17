@@ -1,3 +1,4 @@
+import pandas as pd
 from bs4 import BeautifulSoup as bs4
 import requests
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
@@ -9,7 +10,7 @@ from telegram import Bot
 import pytz
 import time
 
-token = '1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"
+token = "1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug" #'1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' 
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -53,7 +54,7 @@ def get_time(i):
 # ------------------- GENERATE RANDOM ARTICLES FROM POOL OF TOPICS ----------------------#
 
 #Topics for random article generator
-random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory','astrophysics', 'Cosmology', 'Astrophotography']
+
 
 def get_final_random_article(articles_text):
     data = []
@@ -64,6 +65,7 @@ def get_final_random_article(articles_text):
     return(data[i][0])
 
 def get_random_article():
+    random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory','astrophysics', 'Cosmology', 'Astrophotography']
     i = random.randrange(0,len(random_topics),1)
     keyword = random_topics[i]
     url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
@@ -79,7 +81,7 @@ def random_article(update, context):
 
 # ------------- GENERATE 3 ARTICLES PER WEEK (SUNDAY, WEDNESDAY, FRIDAY) ---------------- #
 
-topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
+
 
 def get_final_article(articles_text):
     data = []
@@ -89,24 +91,28 @@ def get_final_article(articles_text):
     return(data[0][0])
 
 def send_article(context):
+    weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
     day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
+    context.bot.sendMessage(chat_id = context.job.context,text = day)
     #time = int(datetime.datetime.now().strftime("%H"))
-    if day == 'Sunday':
-        topic_day = topics[0]
+   # try:
+    if day == 'Monday':
+        topic_day = weekly_article_topics[0]
     elif day == 'Wednesday':
-        topic_day = topics[1]
+        topic_day = weekly_article_topics[1]
     elif day == 'Friday':
-        topic_day = topics[2]
-        
+        topic_day = weekly_article_topics[2] 
     url = "https://www.google.com/search?q="+topic_day+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
     context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
-    return()
+   # except:
+   #     context.bot.sendMessage(chat_id="-1001331038106", text="Error in weekly articles")
+    
 
 
 def get_article(update,context):
     context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
-    context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz), days= (0,3,5), context = update.message.chat_id)
+    context.job_queue.run_daily(send_article, time = datetime.time(22,8,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id) #, days= (1,3,5)
     
 def stop_func(update, context):
     context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
@@ -149,34 +155,42 @@ def get_wiki_link(search_text):
     google_page = google_page.find(class_ = "ZINbbc xpd O9g5cc uUPGi")
     wiki_link = google_page.find('a')['href'].replace('/url?q=','')
     wiki_link = wiki_link.split("&sa")[0]
-    return(wiki_link)
-
+    if(wiki_link.find('wikipedia')):
+        if(wiki_link.find("%25")):
+            wiki_link = re.sub("%25","%", wiki_link)
+        return(wiki_link)
+    else:
+        return("Cannot find Wikipedia link.")
+    
 def scrape_wiki(search_text):
     if(profanity.contains_profanity(search_text)):
         return("censored.")
     elif(search_text == '+wiki'):
         return("Please include keyword for search.")
     else:
-        wiki_link = get_wiki_link(search_text)
-        wiki_page = requests.get(wiki_link)
-        wiki_page = bs4(wiki_page.text,'html.parser')
-        summary = wiki_page.find_all('p')
-        summary_text=""
-        for i in summary:
-            if(len(i.get_text()) > 30):
-                summary_text = i.get_text()
-                break
-        #image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
-        text = summary_text + "\n\n" + wiki_link
-        return(text)
+        try:
+            wiki_link = get_wiki_link(search_text)
+            wiki_page = requests.get(wiki_link)
+            wiki_page = bs4(wiki_page.text,'html.parser')
+            summary = wiki_page.find_all('p')
+            summary_text=""
+            for i in summary:
+                if(len(i.get_text()) > 30):
+                    summary_text = i.get_text()
+                    break
+            #image_url = "https://en.wikipedia.org"+ wiki_page.find('table').find('a')['href']
+            text = summary_text + "\n\n" + wiki_link
+            return(text)
+        except:
+            return("Cannot find Wikipedia page.")
 
 def get_wiki_info(update, context):
     chat_id = update.message.chat_id
     search_text=""
     for i in context.args:
         search_text = search_text + " " +i
-    search_text = search_text + "+wiki"
-    update.message.reply_text(scrape_wiki(search_text))
+    search_text += "+wiki"
+    update.message.reply_text(scrape_wiki(search_text.lower()))
 
 # ----------------------------------------------------------------------------------------------#
 
@@ -201,7 +215,7 @@ def main():
     dp.add_handler(CommandHandler('randomarticle',random_article))
     dp.add_handler(CommandHandler('help',bot_help))
     dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
-    dp.add_handler(CommandHandler('wiki',get_wiki_info))
+    dp.add_handler(CommandHandler('wiki',get_wiki_info, pass_args=True))
     updater.start_polling()
     #updater.idle()
 
