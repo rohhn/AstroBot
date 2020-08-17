@@ -10,7 +10,7 @@ from telegram import Bot
 import pytz
 import time
 
-token = "1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug" #'1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' 
+token = '1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'  #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug" 
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -112,7 +112,7 @@ def send_article(context):
 
 def get_article(update,context):
     context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
-    context.job_queue.run_daily(send_article, time = datetime.time(22,8,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id) #, days= (1,3,5)
+    context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id)
     
 def stop_func(update, context):
     context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
