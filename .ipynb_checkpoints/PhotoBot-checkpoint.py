@@ -21,9 +21,9 @@ def get_url(page_text):
     
 def get_title(page_text):
     if(page_text.find('img')):
-        return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n","").split("Image")[0]))
+        return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Image")[0]))
     elif(page_text.find('iframe')):
-        return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n","").split("Video")[0]))
+        return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Video")[0]))
     
 def sendmessage(context):
     url = "https://apod.nasa.gov/apod/astropix.html"
@@ -32,7 +32,7 @@ def sendmessage(context):
     date = page_text.find("p").contents[3].get_text().replace('\n','')
     url = get_url(page_text)
     title = get_title(page_text)
-    explanation = page_text.find_all('p')[2].get_text().replace("\n","").split("Tomorrow")[0].split("Explanation: ")[1]
+    explanation = re.sub("  +","",page_text.find_all('p')[2].get_text().replace("\n"," ").split("Tomorrow")[0].split("Explanation: ")[1])
     if(page_text.find('img')):
         try:
             context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str("APOD - "+title+"\n\n"+explanation+"\nDate: " + date))
