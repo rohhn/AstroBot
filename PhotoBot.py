@@ -32,7 +32,7 @@ def sendmessage(context):
     date = page_text.find("p").contents[3].get_text().replace('\n','')
     url = get_url(page_text)
     title = get_title(page_text)
-    explanation = re.sub("  +","",page_text.find_all('p')[2].get_text().replace("\n"," ").split("Tomorrow")[0].split("Explanation: ")[1])
+    explanation = re.sub("  +"," ",page_text.find_all('p')[2].get_text().replace("\n"," ").split("Tomorrow")[0].split("Explanation: ")[1])
     if(page_text.find('img')):
         try:
             context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str("APOD - "+title+"\n\n"+explanation+"\nDate: " + date))

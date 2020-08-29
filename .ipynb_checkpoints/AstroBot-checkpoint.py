@@ -93,7 +93,7 @@ def get_final_article(articles_text):
 def send_article(context):
     weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
     day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
-    context.bot.sendMessage(chat_id = context.job.context,text = day)
+    #context.bot.sendMessage(chat_id = context.job.context,text = day)
     #time = int(datetime.datetime.now().strftime("%H"))
    # try:
     if day == 'Monday':
@@ -194,11 +194,49 @@ def get_wiki_info(update, context):
 
 # ----------------------------------------------------------------------------------------------#
 
+# ------------------------------------ WEATHER UPDATES --------------------------------------#
+
+def get_moon_info():
+    td_url = "https://www.timeanddate.com/moon/phases/india/hyderabad"
+    td_response = requests.get(td_url)
+    td_response = bs4(td_response.text, 'html.parser')
+    moon_image = "https://www.timeanddate.com/" + str(td_response.find(id='cur-moon')['src'])
+    moon_percent = td_response.find(id='cur-moon-percent').text
+    moon_phase = td_response.findAll('section',{'class':'bk-focus'})[0].find('a').text
+    return moon_image, moon_percent, moon_phase
+
+def openweather(lat, lon):
+    openweather_api = "90701b1aba6e661af014c16e653b91c3"
+    openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+lat+"&lon="+lon+"&exclude=minutely&units=metric"+"&appid="+openweather_api
+    openweather_response = (requests.get(openweather_url)).json()
+    latitude = openweather_response['lat']
+    longitude = openweather_response['lon']
+    sunset_time = datetime.fromtimestamp(int(openweather_response['current']['sunset'])).time()
+    cloud_cover = openweather_response['current']['clouds']
+    wind_speed = round(float(openweather_response['current']['wind_speed']*18/5),2)
+    description = openweather_response['current']['weather'][0]['description']
+    icon_url = "http://openweathermap.org/img/wn/"+openweather_response['current']['weather'][0]['icon']+"@2x.png"
+    moon_image, moon_percent, moon_phase = get_moon_info()
+    message = "Weather update for "+str(latitude)+", "+str(longitude)+ "\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nStatus: "+description+"\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
+    return message, moon_image
+    
+
+def get_weather(update, context):
+    search_text=""
+    for i in context.args:
+        search_text += i
+    #bot.sendMessage(chat_id=update.message.chat_id, text = search_text)    
+    lat, lon = search_text.replace(' ','').split(',')
+    message, photo = openweather(lat, lon)
+    context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=photo)
+
+# ----------------------------------------------------------------------------------------------#
+
 
 # ------------------------------------ PRINT HELP COMMANDS -------------------------------------#
 def bot_help(update, context):
     chat_id = update.message.chat_id
-    help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/newarticle <keyword>\" will fetch an article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
+    help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/newarticle <keyword>\" will fetch an article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" will fetch a weather update.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
     update.message.reply_text(help_text)
     
 # ----------------------------------------------------------------------------------------------#
@@ -216,6 +254,7 @@ def main():
     dp.add_handler(CommandHandler('help',bot_help))
     dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
     dp.add_handler(CommandHandler('wiki',get_wiki_info, pass_args=True))
+    dp.add_handler(CommandHandler('weather',get_weather, pass_args=True))
     updater.start_polling()
     #updater.idle()
 
