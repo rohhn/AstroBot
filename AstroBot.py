@@ -96,7 +96,7 @@ def send_article(context):
     #context.bot.sendMessage(chat_id = context.job.context,text = day)
     #time = int(datetime.datetime.now().strftime("%H"))
    # try:
-    if day == 'Monday':
+    if day == 'Sunday':
         topic_day = weekly_article_topics[0]
     elif day == 'Wednesday':
         topic_day = weekly_article_topics[1]
