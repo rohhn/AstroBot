@@ -182,7 +182,9 @@ def scrape_wiki(search_text):
             text = summary_text + "\n\n" + wiki_link
             return(text)
         except:
+            contex.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
             return("Cannot find Wikipedia page.")
+            
 
 def get_wiki_info(update, context):
     chat_id = update.message.chat_id
@@ -227,8 +229,11 @@ def get_weather(update, context):
         search_text += i
     #bot.sendMessage(chat_id=update.message.chat_id, text = search_text)    
     lat, lon = search_text.replace(' ','').split(',')
-    message, photo = openweather(lat, lon)
-    context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=photo)
+    try: 
+        message, photo = openweather(lat, lon)
+        context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=photo)
+    except:
+        contex.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------------#
 
