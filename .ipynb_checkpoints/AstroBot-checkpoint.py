@@ -213,7 +213,7 @@ def openweather(lat, lon):
     openweather_response = (requests.get(openweather_url)).json()
     latitude = openweather_response['lat']
     longitude = openweather_response['lon']
-    sunset_time = datetime.fromtimestamp(int(openweather_response['current']['sunset'])).time()
+    sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).time()
     cloud_cover = openweather_response['current']['clouds']
     wind_speed = round(float(openweather_response['current']['wind_speed']*18/5),2)
     description = openweather_response['current']['weather'][0]['description']
@@ -233,7 +233,7 @@ def get_weather(update, context):
         message, photo = openweather(lat, lon)
         context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=photo)
     except:
-        contex.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------------#
 
