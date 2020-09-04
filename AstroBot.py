@@ -75,8 +75,11 @@ def get_random_article():
 
 #BOT CALLED FUNCTION
 def random_article(update, context):
-    chat_id = update.message.chat_id
-    update.message.reply_text(get_random_article())
+    try:
+        update.message.reply_text(get_random_article())
+    except:
+        update.message.reply_text("Error in retrieving data.")
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------#
 
@@ -141,7 +144,11 @@ def fetch_article(update, context):
     search_text=""
     for i in context.args:
         search_text = search_text + " " +i
-    update.message.reply_text(get_keyword_article(search_text))
+    try:
+        update.message.reply_text(get_keyword_article(search_text))
+    except:
+        update.message.reply_text("Error in retrieving data.")
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
     
 #calls same function as weekly article generator    
 
@@ -193,7 +200,11 @@ def get_wiki_info(update, context):
     for i in context.args:
         search_text = search_text + " " +i
     search_text += "+wiki"
-    update.message.reply_text(scrape_wiki(search_text.lower()))
+    try:
+        update.message.reply_text(scrape_wiki(search_text.lower()))
+    except:
+        update.message.reply_text("Error in retrieving data.")
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------------#
 
