@@ -11,7 +11,7 @@ import pytz
 import time
 import sys
 
-token ="1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  #'1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'  #
+token ='1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
