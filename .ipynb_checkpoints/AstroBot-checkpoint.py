@@ -10,8 +10,9 @@ from telegram import Bot
 import pytz
 import time
 import sys
+from streamlit import caching
 
-token ='1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  
+token ="1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  #'1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' 
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -231,8 +232,7 @@ def weather_data(lat, lon):
     temperature  = openweather_response['current']['temp']
     icon_url = "http://openweathermap.org/img/wn/"+openweather_response['current']['weather'][0]['icon']+"@2x.png"
     moon_image, moon_percent, moon_phase = get_moon_info()
-    #"Weather update for "+str(lat)+", "+str(lon)+ 
-    html_message = "Weather update for <b>"+str(round(lat,2))+", "+str(round(lon,2))+"\nStatus:</b> "+description+"\n<b>Cloud cover: </b>"+str(cloud_cover)+"%\n<b>Wind speed:</b> "+str(wind_speed)+"kmph\n<b>Dew Point:</b> "+str(dew_point)+"°C\n<b>Temperature:</b> "+str(temperature)+"°C\n<b>Moon Illumination:</b> "+moon_percent+"\n<b>Moon phase:</b> "+moon_phase
+    #html_message = "Weather update for <b>"+str(round(lat,2))+", "+str(round(lon,2))+"\nStatus:</b> "+description+"\n<b>Cloud cover: </b>"+str(cloud_cover)+"%\n<b>Wind speed:</b> "+str(wind_speed)+"kmph\n<b>Dew Point:</b> "+str(dew_point)+"°C\n<b>Temperature:</b> "+str(temperature)+"°C\n<b>Moon Illumination:</b> "+moon_percent+"\n<b>Moon phase:</b> "+moon_phase
     message = "Weather update for "+str(round(lat,2))+", "+str(round(lon,2))+"\nStatus: "+description+"\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
     return message, moon_image, clearoutside_image
     
@@ -251,6 +251,7 @@ def get_weather(update, context):
     try:    
         message, moon_photo, cl_image = weather_data(lat, lon)
         context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=cl_image)
+        #caching.clear_cache()
         #context.bot.sendMessage(chat_id="-1001331038106", text = str(lat) + ", "+str(lon))
     except:
         context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
@@ -270,7 +271,7 @@ def bot_help(update, context):
 
 
 def main():
-    
+    caching.clear_cache()
     updater = Updater(token, use_context= True) 
     
     dp = updater.dispatcher
@@ -281,6 +282,7 @@ def main():
     dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
     dp.add_handler(CommandHandler('wiki',get_wiki_info, pass_args=True))
     dp.add_handler(CommandHandler('weather',get_weather, pass_args=True))
+    caching.clear_cache()
     updater.start_polling()
     #updater.idle()
 

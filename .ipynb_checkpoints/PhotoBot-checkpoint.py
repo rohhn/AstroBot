@@ -7,7 +7,7 @@ import hashlib
 import re
 from telegram.ext import Updater, CommandHandler, JobQueue
 
-token = "1163369796:AAGmNm8peqmRL7Bf9LPwg5RYsqDfs9LHbrQ"
+token = "1163369796:AAGmNm8peqmRL7Bf9LPwg5RYsqDfs9LHbrQ" #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"
 
 indt = pytz.timezone("Asia/Kolkata")
 
@@ -53,7 +53,7 @@ def daily_job(update, context):
 def stop_func(update, context):
     context.bot.sendMessage(chat_id=update.message.chat_id,
                       text='stopped')
-    job_queue.stop()
+    context.job_queue.schedule_removal()
 
 def main():
     updater = Updater(token, use_context= True)
