@@ -117,7 +117,7 @@ def send_article(context):
 
 
 def get_article(update,context):
-    context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
+    context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles related to astronomy will be everyday.\n\n Clear Skies!")
     context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz), context = update.message.chat_id)
     #context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id)
     
