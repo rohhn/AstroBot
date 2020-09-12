@@ -222,8 +222,8 @@ def weather_data(lat, lon, search_data):
     openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely&units=metric"+"&appid=90701b1aba6e661af014c16e653b91c3"
     openweather_response = (requests.get(openweather_url)).json()
     clearoutside_image = "https://clearoutside.com/forecast_image_medium/"+str(lat)+"/"+str(lon)+"/forecast.png"
-    sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).time(tzinfo=ind_tz)
-    time = datetime.datetime.fromtimestamp(int(openweather_response['current']['dt'])).time(tzinfo=ind_tz)
+    sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).astimezone(ind_tz).time()
+    time = datetime.datetime.fromtimestamp(int(openweather_response['current']['dt'])).astimezone(ind_tz).time()
     cloud_cover = openweather_response['current']['clouds']
     wind_speed = round(float(openweather_response['current']['wind_speed']*18/5),2)
     description = openweather_response['current']['weather'][0]['description']
