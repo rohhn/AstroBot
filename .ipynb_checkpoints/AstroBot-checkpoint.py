@@ -12,7 +12,7 @@ import time
 import sys
 from streamlit import caching
 
-token ="1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  #'1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' 
+token = '1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'  #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  
 bot = Bot(token)
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -80,7 +80,7 @@ def random_article(update, context):
         update.message.reply_text(get_random_article())
     except:
         update.message.reply_text("Error in retrieving data.")
-        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(random_article):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------#
 
@@ -149,7 +149,7 @@ def fetch_article(update, context):
         update.message.reply_text(get_keyword_article(search_text))
     except:
         update.message.reply_text("Error in retrieving data.")
-        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(fetch_article):\n" + str(sys.exc_info()))
     
 #calls same function as weekly article generator    
 
@@ -201,11 +201,7 @@ def get_wiki_info(update, context):
     for i in context.args:
         search_text = search_text + " " +i
     search_text += "+wiki"
-    try:
-        update.message.reply_text(scrape_wiki(search_text.lower()))
-    except:
-        update.message.reply_text("Error in retrieving data.")
-        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
+    update.message.reply_text(scrape_wiki(search_text.lower()))
 
 # ----------------------------------------------------------------------------------------------#
 
@@ -220,11 +216,12 @@ def get_moon_info():
     moon_phase = td_response.findAll('section',{'class':'bk-focus'})[0].find('a').text
     return moon_image, moon_percent, moon_phase
 
-def weather_data(lat, lon):
+def weather_data(lat, lon, search_data):
     openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely&units=metric"+"&appid=90701b1aba6e661af014c16e653b91c3"
     openweather_response = (requests.get(openweather_url)).json()
-    clearoutside_image = "https://clearoutside.com/forecast_image_medium/"+str(round(lat,2))+"/"+str(round(lon,2))+"/forecast.png"
+    clearoutside_image = "https://clearoutside.com/forecast_image_medium/"+str(lat)+"/"+str(lon)+"/forecast.png"
     sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).time()
+    time = datetime.datetime.fromtimestamp(int(openweather_response['current']['dt'])).time()
     cloud_cover = openweather_response['current']['clouds']
     wind_speed = round(float(openweather_response['current']['wind_speed']*18/5),2)
     description = openweather_response['current']['weather'][0]['description']
@@ -232,30 +229,34 @@ def weather_data(lat, lon):
     temperature  = openweather_response['current']['temp']
     icon_url = "http://openweathermap.org/img/wn/"+openweather_response['current']['weather'][0]['icon']+"@2x.png"
     moon_image, moon_percent, moon_phase = get_moon_info()
-    #html_message = "Weather update for <b>"+str(round(lat,2))+", "+str(round(lon,2))+"\nStatus:</b> "+description+"\n<b>Cloud cover: </b>"+str(cloud_cover)+"%\n<b>Wind speed:</b> "+str(wind_speed)+"kmph\n<b>Dew Point:</b> "+str(dew_point)+"°C\n<b>Temperature:</b> "+str(temperature)+"°C\n<b>Moon Illumination:</b> "+moon_percent+"\n<b>Moon phase:</b> "+moon_phase
-    message = "Weather update for "+str(round(lat,2))+", "+str(round(lon,2))+"\nStatus: "+description+"\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
+    
+    #message = str(time)
+    message = "Weather update for "+search_data+ "at " + str(time) +"\nStatus: "+description+"\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
     return message, moon_image, clearoutside_image
     
 
 def get_weather(update, context):
     search_text=""
     for i in context.args:
-        search_text += i
+        search_text += i + ' '
     #bot.sendMessage(chat_id=update.message.chat_id, text = search_text)    
     if(re.search("^[0-9]",search_text)):
         lat, lon = search_text.replace(' ','').split(',')
     else:
         geolocation_url = "https://dev.virtualearth.net/REST/v1/Locations?key=Al3NnfvA47J04pxm1b6YfknCea0TYqx4TuzYQJ_EnCXTb5N8ZLMwPtrB631UHiJJ&o=json&q="+search_text+"&jsonso="+search_text
         geolocation_response = (requests.get(geolocation_url)).json()
-        lat, lon = geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates']
+        lat = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][0],2)
+        lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1],2)
+        
     try:    
-        message, moon_photo, cl_image = weather_data(lat, lon)
-        context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=cl_image)
+        message, moon_photo, cl_image = weather_data(lat, lon, search_text)
+        context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=moon_photo)
         #caching.clear_cache()
         #context.bot.sendMessage(chat_id="-1001331038106", text = str(lat) + ", "+str(lon))
     except:
         context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
-        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
+        #print(str(sys.exc_info()))
+        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------------#
 

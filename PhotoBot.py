@@ -21,9 +21,9 @@ def get_url(page_text):
     
 def get_title(page_text):
     if(page_text.find('img')):
-        return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Image")[0]))
+        return(re.sub("  +"," ",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Image")[0]))
     elif(page_text.find('iframe')):
-        return(re.sub("  +","",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Video")[0]))
+        return(re.sub("  +"," ",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Video")[0]))
     
 def sendmessage(context):
     url = "https://apod.nasa.gov/apod/astropix.html"

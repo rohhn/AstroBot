@@ -10,7 +10,7 @@ from telegram import Bot
 import pytz
 import time
 import sys
-import gc
+from streamlit import caching
 
 token ="1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"  #'1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU' 
 bot = Bot(token)
@@ -59,7 +59,6 @@ def get_time(i):
 
 
 def get_final_random_article(articles_text):
-    gc.collect()
     data = []
     for i in articles_text: 
         data.append([get_article_url(i),get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
@@ -68,7 +67,6 @@ def get_final_random_article(articles_text):
     return(data[i][0])
 
 def get_random_article():
-    gc.collect()
     random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory','astrophysics', 'Cosmology', 'Astrophotography']
     i = random.randrange(0,len(random_topics),1)
     keyword = random_topics[i]
@@ -78,7 +76,6 @@ def get_random_article():
 
 #BOT CALLED FUNCTION
 def random_article(update, context):
-    gc.collect()
     try:
         update.message.reply_text(get_random_article())
     except:
@@ -92,7 +89,6 @@ def random_article(update, context):
 
 
 def get_final_article(articles_text):
-    gc.collect()
     data = []
     for i in articles_text: 
         data.append([get_article_url(i),get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
@@ -100,7 +96,6 @@ def get_final_article(articles_text):
     return(data[0][0])
 
 def send_article(context):
-    gc.collect()
     weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
     day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
     #context.bot.sendMessage(chat_id = context.job.context,text = day)
@@ -121,12 +116,10 @@ def send_article(context):
 
 
 def get_article(update,context):
-    gc.collect()
     context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
     context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id)
     
 def stop_func(update, context):
-    gc.collect()
     context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
     job_queue.stop()
 
@@ -136,7 +129,6 @@ def stop_func(update, context):
 
 # ----------------------- FETCH ARTICLE BASED ON KEYWORDS BY USER --------------------------- #
 def get_keyword_article(keyword):
-    gc.collect()
     if(profanity.contains_profanity(keyword)):
         return "no results"
     elif(keyword==""):
@@ -149,7 +141,6 @@ def get_keyword_article(keyword):
         #return url
 
 def fetch_article(update, context):
-    gc.collect()
     chat_id = update.message.chat_id
     search_text=""
     for i in context.args:
@@ -167,7 +158,6 @@ def fetch_article(update, context):
 
 # ----------------------------- WIKI SUMMARY AND LINK GENERATOR --------------------------------#
 def get_wiki_link(search_text):
-    gc.collect()
     google_url = "https://www.google.com/search?q="+search_text+"&rlz=1C5CHFA_enIN908IN908&oq="+search_text+"&aqs=chrome.0.69i59.6224j0j1&sourceid=chrome&ie=UTF-8"
     google_page = requests.get(google_url)
     google_page = bs4(google_page.text,'html.parser')
@@ -182,7 +172,6 @@ def get_wiki_link(search_text):
         return("Cannot find Wikipedia link.")
     
 def scrape_wiki(search_text):
-    gc.collect()
     if(profanity.contains_profanity(search_text)):
         return("censored.")
     elif(search_text == '+wiki'):
@@ -207,24 +196,18 @@ def scrape_wiki(search_text):
             
 
 def get_wiki_info(update, context):
-    gc.collect()
     chat_id = update.message.chat_id
     search_text=""
     for i in context.args:
         search_text = search_text + " " +i
     search_text += "+wiki"
-    try:
-        update.message.reply_text(scrape_wiki(search_text.lower()))
-    except:
-        update.message.reply_text("Error in retrieving data.")
-        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_wiki_info):\n" + str(sys.exc_info()))
+    update.message.reply_text(scrape_wiki(search_text.lower()))
 
 # ----------------------------------------------------------------------------------------------#
 
 # ------------------------------------ WEATHER UPDATES --------------------------------------#
 
 def get_moon_info():
-    gc.collect()
     td_url = "https://www.timeanddate.com/moon/phases/india/hyderabad"
     td_response = requests.get(td_url)
     td_response = bs4(td_response.text, 'html.parser')
@@ -233,36 +216,29 @@ def get_moon_info():
     moon_phase = td_response.findAll('section',{'class':'bk-focus'})[0].find('a').text
     return moon_image, moon_percent, moon_phase
 
-def openweather(lat, lon):
-    gc.collect()
+def weather_data(lat, lon, search_data):
     openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely&units=metric"+"&appid=90701b1aba6e661af014c16e653b91c3"
     openweather_response = (requests.get(openweather_url)).json()
+    clearoutside_image = "https://clearoutside.com/forecast_image_medium/"+str(lat)+"/"+str(lon)+"/forecast.png"
     sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).time()
+    time = datetime.datetime.fromtimestamp(int(openweather_response['current']['dt'])).time()
     cloud_cover = openweather_response['current']['clouds']
     wind_speed = round(float(openweather_response['current']['wind_speed']*18/5),2)
     description = openweather_response['current']['weather'][0]['description']
     dew_point  = openweather_response['current']['dew_point']
     temperature  = openweather_response['current']['temp']
     icon_url = "http://openweathermap.org/img/wn/"+openweather_response['current']['weather'][0]['icon']+"@2x.png"
-    return description, cloud_cover, wind_speed, temperature, dew_point
-    
-    
-def weather_data(lat, lon):
-    gc.collect()
     moon_image, moon_percent, moon_phase = get_moon_info()
-    description, cloud_cover, wind_speed, temperature, dew_point = openweather(lat, lon)
-    clearoutside_image = "https://clearoutside.com/forecast_image_medium/"+str(lat)+"/"+str(lon)+"/forecast.png"
     
-    message = "Weather update for "+str(lat)+", "+str(lon)+"\nStatus: "+description+"\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
-    
+    #message = str(time)
+    message = "Weather update for "+search_data+ "at " + str(time) +"\nStatus: "+description+"\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
     return message, moon_image, clearoutside_image
     
 
 def get_weather(update, context):
-    gc.collect()
     search_text=""
     for i in context.args:
-        search_text += i
+        search_text += i + ' '
     #bot.sendMessage(chat_id=update.message.chat_id, text = search_text)    
     if(re.search("^[0-9]",search_text)):
         lat, lon = search_text.replace(' ','').split(',')
@@ -271,12 +247,15 @@ def get_weather(update, context):
         geolocation_response = (requests.get(geolocation_url)).json()
         lat = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][0],2)
         lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1],2)
+        
     try:    
-        message, moon_photo, cl_image = weather_data(lat, lon)
-        context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=cl_image)
+        message, moon_photo, cl_image = weather_data(lat, lon, search_text)
+        context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=moon_photo)
+        #caching.clear_cache()
         #context.bot.sendMessage(chat_id="-1001331038106", text = str(lat) + ", "+str(lon))
     except:
         context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
+        #print(str(sys.exc_info()))
         context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------------#
@@ -293,15 +272,18 @@ def bot_help(update, context):
 
 
 def main():
+    caching.clear_cache()
     updater = Updater(token, use_context= True) 
+    
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler('wa',get_article, pass_job_queue = True))
-    dp.add_handler(CommandHandler('swa',stop_func, pass_job_queue = True))
-    dp.add_handler(CommandHandler('r',random_article))
-    dp.add_handler(CommandHandler('h',bot_help))
-    dp.add_handler(CommandHandler('n', fetch_article, pass_args=True))
+    dp.add_handler(CommandHandler('weekly_articles',get_article, pass_job_queue = True))
+    dp.add_handler(CommandHandler('stop_weekly_articles',stop_func, pass_job_queue = True))
+    dp.add_handler(CommandHandler('randomarticle',random_article))
+    dp.add_handler(CommandHandler('help',bot_help))
+    dp.add_handler(CommandHandler('newarticle', fetch_article, pass_args=True))
     dp.add_handler(CommandHandler('wiki',get_wiki_info, pass_args=True))
-    dp.add_handler(CommandHandler('w',get_weather, pass_args=True))
+    dp.add_handler(CommandHandler('weather',get_weather, pass_args=True))
+    caching.clear_cache()
     updater.start_polling()
     #updater.idle()
 
