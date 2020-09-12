@@ -68,7 +68,7 @@ def get_final_random_article(articles_text):
 
 def get_random_article():
     random_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','black+holes', 'space+exploration', 'hubble+space+telescope','space+observatory','astrophysics', 'Cosmology', 'Astrophotography']
-    i = random.randrange(0,len(random_topics),1)
+    i = random.randint(0,len(random_topics)-1)
     keyword = random_topics[i]
     url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
     articles_text = scrape(url)
@@ -96,20 +96,21 @@ def get_final_article(articles_text):
     return(data[0][0])
 
 def send_article(context):
-    weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events']
+    weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','space+observations']
     day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
     #context.bot.sendMessage(chat_id = context.job.context,text = day)
     #time = int(datetime.datetime.now().strftime("%H"))
    # try:
-    if day == 'Sunday':
-        topic_day = weekly_article_topics[0]
-    elif day == 'Wednesday':
-        topic_day = weekly_article_topics[1]
-    elif day == 'Friday':
-        topic_day = weekly_article_topics[2] 
+    #if day == 'Sunday':
+    #    topic_day = weekly_article_topics[0]
+    #elif day == 'Wednesday':
+    #    topic_day = weekly_article_topics[1]
+    #elif day == 'Friday':
+    #    topic_day = weekly_article_topics[2]
+    topic_day = weekly_article_topics[random.randint(0,len(weekly_article_topics)-1)]
     url = "https://www.google.com/search?q="+topic_day+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
     articles_text = scrape(url)
-    context.bot.sendMessage(chat_id = context.job.context,text = (day + "\'s article:\n\n" + get_final_article(articles_text)))
+    context.bot.sendMessage(chat_id = context.job.context,text = (get_final_article(articles_text)))
    # except:
    #     context.bot.sendMessage(chat_id="-1001331038106", text="Error in weekly articles")
     
@@ -117,7 +118,8 @@ def send_article(context):
 
 def get_article(update,context):
     context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles will be posted on Sunday, Wednesday and Friday.\n\n Clear Skies!")
-    context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id)
+    context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz), context = update.message.chat_id)
+    #context.job_queue.run_daily(send_article, time = datetime.time(17,23,0,tzinfo=ind_tz),days=(2,4,6), context = update.message.chat_id)
     
 def stop_func(update, context):
     context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
