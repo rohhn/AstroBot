@@ -7,7 +7,7 @@ import hashlib
 import re
 from telegram.ext import Updater, CommandHandler, JobQueue
 
-token = "1163369796:AAGmNm8peqmRL7Bf9LPwg5RYsqDfs9LHbrQ" #"1183471904:AAHzW9eC9XIHJwJXRiyRKrJemA3WVxY_mug"
+token = open('config/photobot.conf','r').read()
 
 indt = pytz.timezone("Asia/Kolkata")
 

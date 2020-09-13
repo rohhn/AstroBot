@@ -9,8 +9,7 @@ import pytz
 import time
 import sys
 
-
-token = '1222703294:AAFtKTZoWytkkt9ZUFehhbwuUrYyzzlitUU'
+token = open('config/astrobot.conf','r').read()
 ind_tz = pytz.timezone('Asia/Kolkata')
 
 
@@ -235,12 +234,7 @@ def get_weather(update, context):
 
 # ------------------------------------ PRINT HELP COMMANDS -------------------------------------#
 def bot_help(update, context):
-    help_text = "Hello, these are the commands I will respond to:\n\n
-    Typing \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\n
-    Typing \"/newarticle <keyword>\" will fetch an article related to the keyword.\n\n
-    Typing \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\n
-    Typing \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\n
-    Typing \"/help\" will show you all the current list of commands I can respond to."
+    help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/newarticle <keyword>\" will fetch an article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
     update.message.reply_text(help_text)
     
 # ----------------------------------------------------------------------------------------------#
