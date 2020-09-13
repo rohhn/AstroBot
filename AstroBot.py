@@ -206,7 +206,7 @@ def weather_data(lat, lon, search_data):
 
     message = "Weather update for "+search_data+ "at " + str(current_time) +"\nStatus: "+description+"\nCloud cover: "+str(cloud_cover)+"%\nWind speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\nMoon Illumination: "+moon_percent+"\nMoon phase: "+moon_phase
     
-    return message, moon_image, clearoutside_image
+    return message, moon_image
     
 
 def get_weather(update, context):
@@ -223,7 +223,7 @@ def get_weather(update, context):
         lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1],2)
         
     try:    
-        message, moon_photo, cl_image = weather_data(lat, lon, search_text)
+        message, moon_photo = weather_data(lat, lon, search_text)
         context.bot.sendPhoto(chat_id=update.message.chat_id, caption = message, photo=moon_photo)
     except:
         context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
