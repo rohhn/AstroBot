@@ -245,7 +245,7 @@ def welcome_new_user(update, context):
     for new_user_obj in update.message.new_chat_members:
         chat_id = update.message.chat_id
         new_usr = ""
-        message="Welcome to HAC $user!" # Welcome message
+        message=r"Welcome to Hyderabad Astronomy Club $user! Please introduce yourself and tell us what you're interested in." # Welcome message
         try:
             new_usr = '@' + new_user_obj['username']
         except:
