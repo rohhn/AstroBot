@@ -148,7 +148,7 @@ def get_wiki_link(search_text):
 def scrape_wiki(search_text):
     if(profanity.contains_profanity(search_text)):
         return("censored.")
-    elif(search_text == '+wiki'):
+    elif(search_text == '+site:wikipedia.org'):
         return("Please include keyword for search.")
     else:
         try:
@@ -216,11 +216,15 @@ def get_weather(update, context):
         
     if(re.search("^[0-9]",search_text)):
         lat, lon = search_text.replace(' ','').split(',')
+    elif (search_text==''):
+        context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
+        return
     else:
         geolocation_url = "https://dev.virtualearth.net/REST/v1/Locations?key=Al3NnfvA47J04pxm1b6YfknCea0TYqx4TuzYQJ_EnCXTb5N8ZLMwPtrB631UHiJJ&o=json&q="+search_text+"&jsonso="+search_text
         geolocation_response = (requests.get(geolocation_url)).json()
         lat = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][0],2)
         lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1],2)
+        
         
     try:    
         message, moon_photo = weather_data(lat, lon, search_text)
