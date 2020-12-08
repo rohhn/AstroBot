@@ -8,6 +8,6 @@ include
 lib
 unicode_characters
 wordlist
-pyenv.cfg
+pyvenv.cfg
 Untitled.ipynb
 AstroBot_Copy1.py
