@@ -3,3 +3,11 @@ testing/
 .ipynb_checkpoints/
 config/.DS_Store
 config/.ipynb_checkpoints/
+bin
+include
+lib
+unicode_characters
+wordlist
+pyenv.cfg
+Untitled.ipynb
+AstroBot_Copy1.py
