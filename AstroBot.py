@@ -70,7 +70,7 @@ class AstroBot():
             update.message.reply_text(self.get_random_article())
         except:
             update.message.reply_text("Error in retrieving data.")
-            context.bot.sendMessage(chat_id="1045695336", text = "AstroBot error(random_article):\n" + str(sys.exc_info()))
+            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(random_article):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------#
 
@@ -127,7 +127,7 @@ class AstroBot():
             update.message.reply_text(self.get_keyword_article(search_text))
         except:
             update.message.reply_text("Error in retrieving data.")
-            context.bot.sendMessage(chat_id="1045695336", text = "AstroBot error(fetch_article):\n" + str(sys.exc_info())) 
+            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(fetch_article):\n" + str(sys.exc_info())) 
 
 # ----------------------------------------------------------------------------------------------#
 
