@@ -1,4 +1,4 @@
-from AstBot import AstroBot
+from AstroBot import AstroBot
 from PhotoBot import PhotoBot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
