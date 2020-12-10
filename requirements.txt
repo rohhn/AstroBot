@@ -8,6 +8,8 @@ chardet==3.0.4
 cryptography==3.2.1
 decorator==4.4.2
 idna==2.10
+libgen-api==0.3.0
+lxml==4.6.2
 pip-autoremove==0.9.1
 pycparser==2.20
 python-telegram-bot==13.1

@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup as bs4
 import requests
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
+from telegram import InlineQueryResultArticle, InputTextMessageContent
 import datetime
 import random
 import re
@@ -8,6 +9,9 @@ from better_profanity import profanity
 import pytz
 import time
 import sys
+from libgen_api import LibgenSearch
+ls = LibgenSearch()
+
 
 
 ind_tz = pytz.timezone('Asia/Kolkata')
@@ -74,7 +78,7 @@ class AstroBot():
 
 # ----------------------------------------------------------------------------------------#
 
-# ------------- GENERATE 3 ARTICLES PER WEEK (SUNDAY, WEDNESDAY, FRIDAY) ---------------- #
+# ----------------------------------- DAILY ARTICLES -------------------------------------- #
 
     def send_article(self, context):
         weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','space+observations']
@@ -99,7 +103,7 @@ class AstroBot():
         
     def stop_func(self, update, context):
         context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
-        job_queue.stop()
+        context.job_queue.schedule_removal()
 
 # ----------------------------------------------------------------------------------------#
 
@@ -234,6 +238,101 @@ class AstroBot():
 
 # ----------------------------------------------------------------------------------------------#
 
+
+    def get_book_download_link(self,url):
+        #r = requests.get(url)
+        page = bs4((requests.get(url)).text, 'html.parser')
+        return(page.find('div', id='download').findAll('a')[1].attrs['href'])
+    def get_book_cover_img(self, url):
+        page = bs4((requests.get(url)).text, 'html.parser')
+        img_url = 'http://library.lol/' + page.find('img').attrs['src']
+        return img_url
+
+
+    def send_book(self, update, context):
+        s = time.time()
+        query = update.inline_query.query
+        filters = {'Extension':'pdf'}
+        results = list()
+        if not query:
+            return
+        print(query)
+        print('_'*40)
+        books = ls.search_title_filtered(query, filters)
+        max_results = len(books) if len(books) < 5 else 5
+        for i in range(max_results):
+            results.append(
+                InlineQueryResultArticle(
+                    id = books[i]['ID'],
+                    title = books[i]['Title'] + ' by ' + books[i]['Author'],
+                    input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1']) + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
+                    #url = self.get_book_cover_img(books[i]['Mirror_1'])
+                )
+            )
+        e = time.time()
+        print(e-s)
+        context.bot.answer_inline_query(update.inline_query.id, results)
+
+    def book_on_command(self, update, context):
+        s = time.time()
+        filters = {'Extension':'pdf'}
+        search_text=""
+        for i in context.args:
+            search_text += i + ' '
+
+        params = search_text.split(' by ')
+        #if len(params) == 2:
+        #    filters['Author'] = params[1]
+        print(params, filters)
+        try:
+            #books = ls.search_title_filtered(params[0], filters)
+            #link = self.get_book_download_link(books[0]['Mirror_1'])
+            #context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+books[0]['Title'] + ' by ' + books[0]['Author']+'</a>', parse_mode='HTML')
+        #except IndexError:
+            filters = {'Extension':'pdf'}
+            books = ls.search_title_filtered(params[0], filters)
+            for book in books:
+                if book['Author'].lower() == params[1]:
+                    link = self.get_book_download_link(book['Mirror_1'])
+            #link = self.get_book_download_link(books[0]['Mirror_1'])
+            context.bot.sendPhoto(chat_id = update.message.chat_id, photo=self.get_book_cover_img(link) , caption = '<a href=\''+link + '\'>'+books[0]['Title'] + ' by ' + books[0]['Author']+'</a>', parse_mode='HTML')
+        except:
+            context.bot.sendMessage(chat_id = update.message.chat_id, text = 'No Results')
+        e= time.time()
+        print(e-s)
+        return
+
+    def new_books(self, update, context):
+        filters = {'Extension':'pdf'}
+        search_text = ''
+        for i in context.args:
+            search_text += i + ' '
+        params = search_text.split(' by ')
+        try:
+            if len(params) == 2:
+                books = ls.search_title_filtered(params[0].strip(), filters)
+                for book in books:
+                    if book['Author'].strip().lower() == params[1].strip().lower():
+                        link = self.get_book_download_link(book['Mirror_1'])
+                        title = book['Title']
+                        author = book['Author']
+                        #img_link = self.get_book_cover_img(book['Mirror_1'])
+                        break
+            else:
+                books = ls.search_title_filtered(params[0].strip(), filters)
+                link = self.get_book_download_link(books[0]['Mirror_1'])
+                title = books[0]['Title']
+                author = books[0]['Author']
+                #img_link = self.get_book_cover_img(books[0]['Mirror_1'])
+            context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>', parse_mode='HTML')
+            #context.bot.sendPhoto(chat_id = update.message.chat_id, photo=img_link , caption = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>')
+            #context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>')
+        except:
+            print(str(sys.exc_info()))
+            context.bot.sendMessage(chat_id = update.message.chat_id, text = 'No Results')
+
+
+
 # ------------------------------------ WELCOME NEW MEMBERS -------------------------------------#
 
     def welcome_new_user(self, update, context):
@@ -255,12 +354,6 @@ class AstroBot():
     def bot_help(self, update, context):
         help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/news <keyword>\" will fetch the latest news article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
         update.message.reply_text(help_text)
-
-
-
-class PhotoBot():
-    def __init__(self):
-        return
 
 
 
