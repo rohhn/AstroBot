@@ -242,7 +242,10 @@ class AstroBot():
     def get_book_download_link(self,url):
         #r = requests.get(url)
         page = bs4((requests.get(url)).text, 'html.parser')
-        return(page.find('div', id='download').findAll('a')[1].attrs['href'])
+        link = page.find('div', id='download').findAll('a')[1].attrs['href']
+        alt_link = page.find('div', id='download').findAll('a')[0].attrs['href']
+        return link, alt_link
+
     def get_book_cover_img(self, url):
         page = bs4((requests.get(url)).text, 'html.parser')
         img_url = 'http://library.lol/' + page.find('img').attrs['src']
@@ -273,34 +276,6 @@ class AstroBot():
         print(e-s)
         context.bot.answer_inline_query(update.inline_query.id, results)
 
-    def book_on_command(self, update, context):
-        s = time.time()
-        filters = {'Extension':'pdf'}
-        search_text=""
-        for i in context.args:
-            search_text += i + ' '
-
-        params = search_text.split(' by ')
-        #if len(params) == 2:
-        #    filters['Author'] = params[1]
-        print(params, filters)
-        try:
-            #books = ls.search_title_filtered(params[0], filters)
-            #link = self.get_book_download_link(books[0]['Mirror_1'])
-            #context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+books[0]['Title'] + ' by ' + books[0]['Author']+'</a>', parse_mode='HTML')
-        #except IndexError:
-            filters = {'Extension':'pdf'}
-            books = ls.search_title_filtered(params[0], filters)
-            for book in books:
-                if book['Author'].lower() == params[1]:
-                    link = self.get_book_download_link(book['Mirror_1'])
-            #link = self.get_book_download_link(books[0]['Mirror_1'])
-            context.bot.sendPhoto(chat_id = update.message.chat_id, photo=self.get_book_cover_img(link) , caption = '<a href=\''+link + '\'>'+books[0]['Title'] + ' by ' + books[0]['Author']+'</a>', parse_mode='HTML')
-        except:
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = 'No Results')
-        e= time.time()
-        print(e-s)
-        return
 
     def new_books(self, update, context):
         filters = {'Extension':'pdf'}
@@ -308,28 +283,27 @@ class AstroBot():
         for i in context.args:
             search_text += i + ' '
         params = search_text.split(' by ')
+        if len(params) == 2:
+            books = ls.search_title_filtered(params[0].strip().lower(), filters)
+            for book in books:
+                if book['Author'].strip().lower() == params[1].strip().lower():
+                    link, alt_link = self.get_book_download_link(book['Mirror_1'])
+                    title = book['Title']
+                    author = book['Author']
+                    break
+        else:
+            books = ls.search_title_filtered(params[0].strip().lower(), filters)
+            link, alt_link= self.get_book_download_link(books[0]['Mirror_1'])
+            title = books[0]['Title']
+            author = books[0]['Author']
         try:
-            if len(params) == 2:
-                books = ls.search_title_filtered(params[0].strip(), filters)
-                for book in books:
-                    if book['Author'].strip().lower() == params[1].strip().lower():
-                        link = self.get_book_download_link(book['Mirror_1'])
-                        title = book['Title']
-                        author = book['Author']
-                        #img_link = self.get_book_cover_img(book['Mirror_1'])
-                        break
-            else:
-                books = ls.search_title_filtered(params[0].strip(), filters)
-                link = self.get_book_download_link(books[0]['Mirror_1'])
-                title = books[0]['Title']
-                author = books[0]['Author']
-                #img_link = self.get_book_cover_img(books[0]['Mirror_1'])
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>', parse_mode='HTML')
-            #context.bot.sendPhoto(chat_id = update.message.chat_id, photo=img_link , caption = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>')
-            #context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>')
+            context.bot.send_document(chat_id = update.message.chat_id, document= link, filename=str(title+'by'+author), caption = str(title+' by '+author))
         except:
             print(str(sys.exc_info()))
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = 'No Results')
+            context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>', parse_mode='HTML')
+            alternate = context.bot.sendMessage(chat_id = update.message.chat_id, text = 'This an alternate download link for the book:\n\n<a href=\''+alt_link + '\'>'+title + ' by ' + author+'</a>\n\n auto-deletes in 30 seconds', parse_mode='HTML')
+            time.sleep(30)
+            context.bot.delete_message(update.message.chat_id, alternate.message_id)
 
 
 
