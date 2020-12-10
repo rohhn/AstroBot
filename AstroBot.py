@@ -352,7 +352,7 @@ class AstroBot():
 
 
     def bot_help(self, update, context):
-        help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/news <keyword>\" will fetch the latest news article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
+        help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/news <keyword>\" will fetch the latest news article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/book <bookname>\" will fetch the PDF version of the book from Library Genesis (May not find every book)\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
         update.message.reply_text(help_text)
 
 
