@@ -99,7 +99,7 @@ class AstroBot():
     
     def get_article(self, update,context):
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles related to astronomy will be everyday.\n\n Clear Skies!")
-        context.job_queue.run_daily(self.send_article, time = datetime.time(17,23,0,tzinfo=ind_tz), context = update.message.chat_id)
+        context.job_queue.run_daily(self.send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id)
         
     def stop_func(self, update, context):
         context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')

@@ -50,7 +50,7 @@ class PhotoBot():
     
     def daily_job(self, update, context):
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
-        context.job_queue.run_daily(self.sendmessage,time=datetime.time(11,23,0,tzinfo=indt), context=update.message.chat_id)
+        context.job_queue.run_daily(self.sendmessage,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id)
         #job_queue.run_repeating(testing, 10, context=update)
     
     def stop_func(self, update, context):
