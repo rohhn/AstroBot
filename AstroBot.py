@@ -110,7 +110,7 @@ class AstroBot():
         
     def stop_func(self, update, context):
         context.bot.sendMessage(chat_id=update.message.chat_id, text='stopped')
-        context.job_queue.schedule_removal()
+        context.job_queue.stop()
 
 # ----------------------------------------------------------------------------------------#
 
