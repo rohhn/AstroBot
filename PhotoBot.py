@@ -29,13 +29,20 @@ class PhotoBot():
             return(re.sub("  +"," ",page_text.find_all('center')[1].get_text().replace("\n"," ").split("Video")[0]))
         
     def sendmessage(self, context):
-        url = "https://apod.nasa.gov/apod/astropix.html"
-        response = requests.get(url)
+        
+        # SECURITY WARNING store this key in a config file
+        KEY   = '9qcwj5VYVjWD1qeTDzezV4CMHmMCWp7t9Lby9B7j'
+        url   = "https://api.nasa.gov/planetary/apod?api_key={}".format(API_KEY)
+        r     = requests.get(url)
+        resp  = r.json()
+        url   = resp['url']
+        date  = resp['date']
+        title = resp['title']
+        cprt  = resp['copyright']
+        explanation = resp['explanation']
         page_text = bs4(response.text,'html.parser')
-        date = page_text.find("p").contents[3].get_text().replace('\n','')
-        url = self.get_url(page_text)
-        title = self.get_title(page_text)
-        explanation = re.sub("  +"," ",page_text.find_all('p')[2].get_text().replace("\n"," ").split("Tomorrow")[0].split("Explanation: ")[1])
+        
+        # Remove this conditional if not needed
         if(page_text.find('img')):
             try:
                 context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str("APOD - "+title+"\n\n"+explanation+"\nDate: " + date))
