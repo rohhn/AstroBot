@@ -2,10 +2,10 @@ bin/
 lib/
 wordlist/
 testing/
-.DS_Store
+.DS_Store/
 .ipynb_checkpoints/
 __pycache__
 include/
-pyvenv.cfg
+*.cfg
 unicode_characters
 *.ipynb
