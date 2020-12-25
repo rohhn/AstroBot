@@ -9,3 +9,8 @@ include/
 *.cfg
 unicode_characters
 *.ipynb
+config/.ipynb_checkpoints/
+config/.DS_Store
+config/chat_ids
+config/test_chat.conf
+config/testbot.conf
