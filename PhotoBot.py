@@ -44,4 +44,4 @@ class PhotoBot():
     def stop_func(self, update, context):
         job_removed = self.h.remove_job(str(update.message.chat_id), context)
         if(job_removed):
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD Stopped')
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')

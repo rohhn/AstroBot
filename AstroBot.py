@@ -110,20 +110,16 @@ class AstroBot():
             data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
         data = sorted(data, key = lambda x:x[1])
         context.bot.sendMessage(chat_id = context.job.context,text = (data[0][0]))
-    
-    def fuck(self, context):
-        context.bot.sendMessage(chat_id=context.job.context, text="t")
 
     def get_article(self, update,context):
         job_removed= self.h.remove_job(str(update.message.chat_id), context)
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles related to astronomy will be everyday.\n\n Clear Skies!")
-        #context.job_queue.run_daily(self.send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id, name=str(update.message.chat_id))
-        context.job_queue.run_repeating(self.fuck, interval=10, context=update.message.chat_id, name=str(update.message.chat_id))
+        context.job_queue.run_daily(self.send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id, name=str(update.message.chat_id))
         
     def stop_func(self, update, context):
         job_removed = self.h.remove_job(str(update.message.chat_id), context)
         if(job_removed):
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Stopped')
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Daily articles have been stopped')
 
 # ----------------------------------------------------------------------------------------#
 
