@@ -6,12 +6,14 @@ import pytz
 import hashlib
 import re
 from telegram.ext import Updater, CommandHandler, JobQueue
+from AstroBot import Helper
 
 indt = pytz.timezone("Asia/Kolkata")
 
 class PhotoBot():
 
     def __init__(self):
+        self.h = Helper()
         return
         
     def get_apod(self, context):
@@ -34,11 +36,12 @@ class PhotoBot():
         
     
     def daily_job(self, update, context):
+        job_removed= self.h.remove_job(str(update.message.chat_id), context)
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
         context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id)
 
    
     def stop_func(self, update, context):
-        context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD stopped')
-        context.job_queue.stop()
-    
+        job_removed = self.h.remove_job(str(update.message.chat_id), context)
+        if(job_removed):
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD Stopped')
