@@ -125,29 +125,50 @@ class AstroBot():
 
 # ----------------------- FETCH LATEST ARTICLE BASED ON KEYWORDS BY USER --------------------------- #
 
-    def get_keyword_article(self, keyword):
+    def get_keyword_articles(self, keyword):
         if(profanity.contains_profanity(keyword)):
             return "no results"
         elif(keyword==""):
             return("Please enter a keyword for search.")
         else:
             url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
-            #articles_text = self.h.scrape(url)
             data = []
             for i in self.h.scrape(url):
                 data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
-            data = sorted(data, key = lambda x:x[1])
-            return(data[0][0]) #calls function from weekly articles generator
+            #data = sorted(data, key = lambda x:x[1])
+            return(data) #calls function from weekly articles generator
 
-    def fetch_article(self, update, context):
-        search_text=""
-        for i in context.args:
-            search_text = search_text + " " +i
-        try:
-            update.message.reply_text(self.get_keyword_article(search_text))
-        except:
-            update.message.reply_text("Error in retrieving data.")
-            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(fetch_article):\n" + str(sys.exc_info())) 
+
+    ''' COMMAND /news FOR ASTROBOT '''
+    #def fetch_article(self, update, context):
+    #    search_text=""
+    #    for i in context.args:
+    #        search_text = search_text + " " +i
+    #    try:
+    #        update.message.reply_text(self.get_keyword_article(search_text)[0][0])
+    #        print(self.get_keyword_article(search_text)[0])
+    #    except:
+    #        update.message.reply_text("Error in retrieving data.")
+    #        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(fetch_article):\n" + str(sys.exc_info())) 
+
+    def news_articles_inline(self, update, context):
+        query = update.inline_query.query
+        results = list()
+        if not query:
+            return
+        print(query)
+        print('_'*40)
+        data = self.get_keyword_articles(query)
+        #max_results = len(data) if len(data) < 5 else 5
+        for i in range(len(data)):
+            results.append(
+                InlineQueryResultArticle(
+                    id = i,
+                    title = data[i][2],
+                    input_message_content = InputTextMessageContent(message_text = '<a href=\''+data[i][0] + '\'>'+data[i][2]+'</a>', parse_mode= 'HTML')
+                )
+            )
+        context.bot.answer_inline_query(update.inline_query.id, results)
 
 # ----------------------------------------------------------------------------------------------#
 
@@ -275,30 +296,31 @@ class AstroBot():
         img_url = 'http://library.lol/' + page.find('img').attrs['src']
         return img_url
 
+    '''INLINE FEATURE FOR BOOKS'''
 
-    def send_book(self, update, context):
-        s = time.time()
-        query = update.inline_query.query
-        filters = {'Extension':'pdf'}
-        results = list()
-        if not query:
-            return
-        print(query)
-        print('_'*40)
-        books = ls.search_title_filtered(query, filters)
-        max_results = len(books) if len(books) < 5 else 5
-        for i in range(max_results):
-            results.append(
-                InlineQueryResultArticle(
-                    id = books[i]['ID'],
-                    title = books[i]['Title'] + ' by ' + books[i]['Author'],
-                    input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1']) + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
-                    #url = self.get_book_cover_img(books[i]['Mirror_1'])
-                )
-            )
-        e = time.time()
-        print(e-s)
-        context.bot.answer_inline_query(update.inline_query.id, results)
+    #def send_book(self, update, context):
+    #    s = time.time()
+    #    query = update.inline_query.query
+    #    filters = {'Extension':'pdf'}
+    #    results = list()
+    #    if not query:
+    #        return
+    #    print(query)
+    #    print('_'*40)
+    #    books = ls.search_title_filtered(query, filters)
+    #    max_results = len(books) if len(books) < 5 else 5
+    #    for i in range(max_results):
+    #        results.append(
+    #            InlineQueryResultArticle(
+    #                id = books[i]['ID'],
+    #                title = books[i]['Title'] + ' by ' + books[i]['Author'],
+    #                input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1']) + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
+    #                #url = self.get_book_cover_img(books[i]['Mirror_1'])
+    #            )
+    #        )
+    #    e = time.time()
+    #    print(e-s)
+    #    context.bot.answer_inline_query(update.inline_query.id, results)
 
 
     def new_books(self, update, context):
@@ -350,7 +372,7 @@ class AstroBot():
 
 
     def bot_help(self, update, context):
-        help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/news <keyword>\" will fetch the latest news article related to the keyword.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/book <bookname>\" will fetch the PDF version of the book from Library Genesis (May not find every book)\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
+        help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/book <bookname>\" will fetch the PDF version of the book from Library Genesis (May not find every book)\n\nIf you are looking for a news article use \"@HAC_AstroBot <search query>\"\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
         update.message.reply_text(help_text)
 
 
