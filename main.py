@@ -6,9 +6,11 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Inlin
 def main():
     AstroBot_Token = open('config/astrobot.conf','r').read()
     PhotoBot_Token = open('config/photobot.conf', 'r').read()
+    BookBot_Token = open('config/bookbot.conf','r').read()
 
     AstroBot_Updater = Updater(AstroBot_Token, use_context= True)
     PhotoBot_Updater = Updater(PhotoBot_Token, use_context=True)
+    BookBot_Updater = Updater(BookBot_Token, use_context=True)
 
 
     astrobot = AstroBot()
@@ -31,6 +33,10 @@ def main():
     photobot_dispatcher.add_handler(CommandHandler('startapod', photobot.daily_job, pass_job_queue=True))
     photobot_dispatcher.add_handler(CommandHandler('stopapod', photobot.stop_func, pass_job_queue=True))
     PhotoBot_Updater.start_polling()
+
+    bookbot_dispatcher = BookBot_Updater.dispatcher
+    bookbot_dispatcher.add_handler(InlineQueryHandler(astrobot.send_book))
+    BookBot_Updater.start_polling()
 
 
 if __name__ == '__main__':

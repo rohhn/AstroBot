@@ -303,29 +303,29 @@ class AstroBot():
 
     '''INLINE FEATURE FOR BOOKS'''
 
-    #def send_book(self, update, context):
-    #    s = time.time()
-    #    query = update.inline_query.query
-    #    filters = {'Extension':'pdf'}
-    #    results = list()
-    #    if not query:
-    #        return
-    #    print(query)
-    #    print('_'*40)
-    #    books = ls.search_title_filtered(query, filters)
-    #    max_results = len(books) if len(books) < 5 else 5
-    #    for i in range(max_results):
-    #        results.append(
-    #            InlineQueryResultArticle(
-    #                id = books[i]['ID'],
-    #                title = books[i]['Title'] + ' by ' + books[i]['Author'],
-    #                input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1']) + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
-    #                #url = self.get_book_cover_img(books[i]['Mirror_1'])
-    #            )
-    #        )
-    #    e = time.time()
-    #    print(e-s)
-    #    context.bot.answer_inline_query(update.inline_query.id, results)
+    def send_book(self, update, context):
+        s = time.time()
+        query = update.inline_query.query
+        filters = {'Extension':'pdf'}
+        results = list()
+        if not query:
+            return
+        print(query)
+        print('_'*40)
+        books = ls.search_title_filtered(query, filters)
+        max_results = len(books) if len(books) < 5 else 5
+        for i in range(max_results):
+            results.append(
+                InlineQueryResultArticle(
+                    id = books[i]['ID'],
+                    title = books[i]['Title'] + ' by ' + books[i]['Author'],
+                    input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1'])[0] + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
+                    #url = self.get_book_cover_img(books[i]['Mirror_1'])
+                )
+            )
+        e = time.time()
+        print(e-s)
+        context.bot.answer_inline_query(update.inline_query.id, results)
 
 
     def new_books(self, update, context):
