@@ -190,7 +190,7 @@ class AstroBot():
         else:
             return("Cannot find Wikipedia link.")
     
-    def scrape_wiki(self, search_text, context):
+    def scrape_wiki(self, search_text):
         if(profanity.contains_profanity(search_text)):
             return("censored.")
         elif(search_text == '+site:wikipedia.org'):
@@ -210,7 +210,7 @@ class AstroBot():
                 text = summary_text + "\n\n" + wiki_link
                 return(text)
             except:
-                context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
+                #context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
                 return("Cannot find Wikipedia page.")
                 
     
