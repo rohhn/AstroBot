@@ -24,9 +24,9 @@ class PhotoBot():
         resp  = requests.get(url).json()
 
         try:
-            url   = resp['hdurl']
-        except:
             url   = resp['url']
+        except:
+            url   = ""
 
         try:
             date  = "Date: " + str(resp['date'])
@@ -59,7 +59,7 @@ class PhotoBot():
             context.bot.delete_message(update.message.chat_id, r.message_id)
 
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
-        context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id, name=str(update.message.chat_id))
+        context.job_queue.run_daily(self.get_apod,time=datetime.time(11,26,0,tzinfo=indt), context=update.message.chat_id, name=str(update.message.chat_id))
 
    
     def stop_func(self, update, context):
