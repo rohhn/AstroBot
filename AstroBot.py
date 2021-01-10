@@ -244,7 +244,7 @@ class AstroBot():
         return bortle_info
 
 
-    def weather_data(self, lat, lon, search_data):
+    def weather_data(self, lat, lon):
         
         openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely&units=metric"+"&appid=90701b1aba6e661af014c16e653b91c3"
         openweather_response = (requests.get(openweather_url)).json()
@@ -261,9 +261,15 @@ class AstroBot():
         #weather_message = "Weather update for "+search_data+ "at " + str(current_time) +"\nStatus: "+description+"\nCloud Cover: "+str(cloud_cover)+"%\nWind Speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\n--------------------\nMoon Illumination: "+moon_percent+"\nMoon Phase: "+moon_phase
         weather_message = "\nStatus: "+description+"\nCloud Cover: "+str(cloud_cover)+"%\nWind Speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\n————————————\nMoon Illumination: "+moon_percent+"\nMoon Phase: "+moon_phase
         return weather_message, moon_image
-        
-    
-    def get_weather(self, update, context):
+
+    def current_location_weather(self, update, context):
+        lat = update.message.location.latitude
+        lon = update.message.location.longitude
+        #context.bot.sendMessage(chat_id=update.message.chat_id, text=str(update.message))
+        self.get_weather(lat, lon, update, context)
+
+
+    def get_location(self, update, context):
         search_text=""
         for i in context.args:
             search_text += i + ' '
@@ -275,16 +281,42 @@ class AstroBot():
             return
         else:
             lat, lon = self.h.get_coordintes(search_text)
-            
-            
+
+        self.get_weather(lat, lon, update, context)
+
+    def get_weather(self, lat, lon, update, context):            
         try:    
-            weather_message, moon_photo = self.weather_data(lat, lon, search_text)
+            weather_message, moon_photo = self.weather_data(lat, lon)
             bortle_info = self.bortle_info(lat, lon)
             context.bot.sendPhoto(chat_id=update.message.chat_id, caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
             #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
         except:
             context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
             context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
+
+    
+    #def get_weather(self, update, context):
+    #    search_text=""
+    #    for i in context.args:
+    #        search_text += i + ' '
+    #        
+    #    if(re.search("^[0-9]",search_text)):
+    #        lat, lon = search_text.replace(' ','').split(',')
+    #    elif (search_text==''):
+    #        context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
+    #        return
+    #    else:
+    #        lat, lon = self.h.get_coordintes(search_text)
+    #        
+    #        
+    #    try:    
+    #        weather_message, moon_photo = self.weather_data(lat, lon, search_text)
+    #        bortle_info = self.bortle_info(lat, lon)
+    #        context.bot.sendPhoto(chat_id=update.message.chat_id, caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
+    #        #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
+    #    except:
+    #        context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
+    #        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------------#
 
