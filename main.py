@@ -21,7 +21,7 @@ def main():
     astrobot_dispatcher.add_handler(CommandHandler('help',astrobot.bot_help))
     #astrobot_dispatcher.add_handler(CommandHandler('news', astrobot.fetch_article, pass_args=True))
     astrobot_dispatcher.add_handler(CommandHandler('wiki',astrobot.get_wiki_info, pass_args=True))
-    astrobot_dispatcher.add_handler(CommandHandler('weather',astrobot.get_location, pass_args=True))
+    astrobot_dispatcher.add_handler(CommandHandler('weather',astrobot.get_weather, pass_args=True))
     astrobot_dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, astrobot.welcome_new_user))
     #astrobot_dispatcher.add_handler(InlineQueryHandler(astrobot.send_book))
     astrobot_dispatcher.add_handler(CommandHandler('book',astrobot.new_books, pass_args=True))
