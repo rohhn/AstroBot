@@ -26,6 +26,7 @@ def main():
     #astrobot_dispatcher.add_handler(InlineQueryHandler(astrobot.send_book))
     astrobot_dispatcher.add_handler(CommandHandler('book',astrobot.new_books, pass_args=True))
     astrobot_dispatcher.add_handler(InlineQueryHandler(astrobot.news_articles_inline))
+    astrobot_dispatcher.add_handler(MessageHandler(Filters.all, astrobot.message_data))
     astrobot_dispatcher.add_handler(MessageHandler(Filters.location, astrobot.current_location_weather))
     AstroBot_Updater.start_polling()
 
