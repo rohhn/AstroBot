@@ -39,6 +39,5 @@ def main():
     bookbot_dispatcher.add_handler(InlineQueryHandler(astrobot.send_book))
     BookBot_Updater.start_polling()
 
-
 if __name__ == '__main__':
     main()
