@@ -327,7 +327,7 @@ class AstroBot():
             
             
         try:    
-            weather_message, moon_photo = self.weather_data(lat, lon, search_text)
+            weather_message, moon_photo = self.weather_data(lat, lon)
             bortle_info = self.bortle_info(lat, lon)
             context.bot.sendPhoto(chat_id=update.message.chat_id, caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
             #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
