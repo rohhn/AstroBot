@@ -345,7 +345,6 @@ class AstroBot():
             #print(e-s)
             context.bot.answer_inline_query(update.inline_query.id, results)
         except:
-            #context.bot.sendMessage(cha)
             print(str(sys.exc_info()))
 
 
@@ -370,18 +369,17 @@ class AstroBot():
                 title = books[0]['Title']
                 author = books[0]['Author']
         except:
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = str(sys.exc_info()))
+            context.bot.sendMessage(chat_id = update.message.chat_id, text = "<a href = \"http://libgen.rs\">No results found.</a>", parse_mode='HTML')
+            return
         try:
-            try:
-                context.bot.send_document(chat_id = update.message.chat_id, document= link, filename=str(title+'by'+author), caption = str(title+' by '+author))
-            except:
-                print(str(sys.exc_info()))
-                context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>', parse_mode='HTML')
-                alternate = context.bot.sendMessage(chat_id = update.message.chat_id, text = 'This an alternate download link for the book:\n\n<a href=\''+alt_link + '\'>'+title + ' by ' + author+'</a>\n\n auto-deletes in 30 seconds', parse_mode='HTML')
-                time.sleep(30)
-                context.bot.delete_message(update.message.chat_id, alternate.message_id)
+            context.bot.send_document(chat_id = update.message.chat_id, document= link, filename=str(title+'by'+author), caption = str(title+' by '+author))
         except:
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = 'error2')
+            print(str(sys.exc_info()))
+            context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>', parse_mode='HTML')
+            alternate = context.bot.sendMessage(chat_id = update.message.chat_id, text = 'This an alternate download link for the book:\n\n<a href=\''+alt_link + '\'>'+title + ' by ' + author+'</a>\n\n auto-deletes in 30 seconds', parse_mode='HTML')
+            time.sleep(30)
+            context.bot.delete_message(update.message.chat_id, alternate.message_id)
+
 
 
 
