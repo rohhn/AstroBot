@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs4
 import requests
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
-from telegram import InlineQueryResultArticle, InputTextMessageContent
+from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 import datetime
 import random
 import re
@@ -134,30 +134,36 @@ class AstroBot():
 
     def get_keyword_articles(self, keyword):
         if(profanity.contains_profanity(keyword)):
-            return "no results"
+            return False
         elif(keyword==""):
-            return("Please enter a keyword for search.")
+            return False
         else:
-            url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
-            data = []
-            for i in self.h.scrape(url):
-                data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
-            #data = sorted(data, key = lambda x:x[1])
-            return(data) #calls function from weekly articles generator
+            try:
+                url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
+                data = []
+                for i in self.h.scrape(url):
+                    data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+                #data = sorted(data, key = lambda x:x[1])
+                return(data) #calls function from weekly articles generator
+            except:
+                return False
 
 
     ''' COMMAND /news FOR ASTROBOT '''
-    #def fetch_article(self, update, context):
-    #    search_text=""
-    #    for i in context.args:
-    #        search_text = search_text + " " +i
-    #    try:
-    #        update.message.reply_text(self.get_keyword_article(search_text)[0][0])
-    #        print(self.get_keyword_article(search_text)[0])
-    #    except:
-    #        update.message.reply_text("Error in retrieving data.")
-    #        context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(fetch_article):\n" + str(sys.exc_info())) 
+    def fetch_article(self, update, context):
+        search_text=""
+        for i in context.args:
+            search_text = search_text + " " +i
+        try:
+            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
+            kb = InlineKeyboardMarkup(kb_list)
+            context.bot.sendMessage(chat_id=update.message.chat_id, text=search_text.strip(), reply_markup = kb)
+        except:
+            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
+            kb = InlineKeyboardMarkup(kb_list)
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Click the button to search', reply_markup = kb)
 
+        
     def news_articles_inline(self, update, context):
         query = update.inline_query.query
         results = list()
@@ -166,15 +172,22 @@ class AstroBot():
         #print(query)
         #print('_'*40)
         data = self.get_keyword_articles(query)
-        #max_results = len(data) if len(data) < 5 else 5
-        for i in range(len(data)):
+        if data:
+            for i in range(len(data)):
+                results.append(
+                    InlineQueryResultArticle(
+                        id = i,
+                        title = data[i][2],
+                        input_message_content = InputTextMessageContent(message_text = '<a href=\''+data[i][0] + '\'>'+data[i][2]+'</a>', parse_mode= 'HTML')
+                    )
+                )
+        else:
             results.append(
                 InlineQueryResultArticle(
-                    id = i,
-                    title = data[i][2],
-                    input_message_content = InputTextMessageContent(message_text = '<a href=\''+data[i][0] + '\'>'+data[i][2]+'</a>', parse_mode= 'HTML')
-                )
-            )
+                    id="0",
+                    title='No results found',
+                    input_message_content= InputTextMessageContent(message_text="No results found")))
+
         context.bot.answer_inline_query(update.inline_query.id, results)
 
 # ----------------------------------------------------------------------------------------------#
@@ -288,7 +301,13 @@ class AstroBot():
         if(re.search("^[0-9]",search_text)):
             lat, lon = search_text.replace(' ','').split(',')
         elif (search_text==''):
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
+            if(update.message.chat.type == 'private'):     
+                #context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
+                kb_list = [[KeyboardButton(text='Send Current Location', request_location=True)]]
+                kb = ReplyKeyboardMarkup(kb_list, one_time_keyboard= True)
+                context.bot.sendMessage(chat_id=update.message.chat_id, text="Please include a location or click the button to send current location.", reply_markup = kb)
+            else:
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
             return
         else:
             lat, lon = self.h.get_coordintes(search_text)
@@ -323,6 +342,7 @@ class AstroBot():
     def send_book(self, update, context):
         #s = time.time()
         query = update.inline_query.query
+        params = query.split(' by ')
         try:
             filters = {'Extension':'pdf'}
             results = list()
@@ -330,20 +350,28 @@ class AstroBot():
                 return
             #print(query)
             #print('_'*40)
-            books = ls.search_title_filtered(query, filters)
+            books = ls.search_title_filtered(params[0].strip(), filters)
             max_results = len(books) if len(books) < 5 else 5
-            for i in range(max_results):
+            if books:
+                for i in range(max_results):
+                    results.append(
+                        InlineQueryResultArticle(
+                            id = books[i]['ID'],
+                            title = books[i]['Title'] + ' by ' + books[i]['Author'],
+                            input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1'])[0] + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
+                            #url = self.get_book_cover_img(books[i]['Mirror_1'])
+                        )
+                    )
+            else:
                 results.append(
                     InlineQueryResultArticle(
-                        id = books[i]['ID'],
-                        title = books[i]['Title'] + ' by ' + books[i]['Author'],
-                        input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1'])[0] + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
-                        #url = self.get_book_cover_img(books[i]['Mirror_1'])
-                    )
-                )
+                        id="0",
+                        title='No results found',
+                        input_message_content= InputTextMessageContent(message_text='<a href=\'http://libgen.rs\'>Libgen Library</a>', parse_mode='HTML', disable_web_page_preview=True)))
             #e = time.time()
             #print(e-s)
             context.bot.answer_inline_query(update.inline_query.id, results)
+
         except:
             print(str(sys.exc_info()))
 
@@ -353,32 +381,14 @@ class AstroBot():
         search_text = ''
         for i in context.args:
             search_text += i + ' '
-        params = search_text.split(' by ')
         try:
-            if len(params) == 2:
-                books = ls.search_title_filtered(params[0].strip().lower(), filters)
-                for book in books:
-                    if book['Author'].strip().lower() == params[1].strip().lower():
-                        link, alt_link = self.get_book_download_link(book['Mirror_1'])
-                        title = book['Title']
-                        author = book['Author']
-                        break
-            else:
-                books = ls.search_title_filtered(params[0].strip().lower(), filters)
-                link, alt_link= self.get_book_download_link(books[0]['Mirror_1'])
-                title = books[0]['Title']
-                author = books[0]['Author']
+            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
+            kb = InlineKeyboardMarkup(kb_list)
+            context.bot.sendMessage(chat_id=update.message.chat_id, text=search_text, reply_markup = kb)
         except:
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = "<a href = \"http://libgen.rs\">No results found.</a>", parse_mode='HTML')
-            return
-        try:
-            context.bot.send_document(chat_id = update.message.chat_id, document= link, filename=str(title+'by'+author), caption = str(title+' by '+author))
-        except:
-            print(str(sys.exc_info()))
-            context.bot.sendMessage(chat_id = update.message.chat_id, text = '<a href=\''+link + '\'>'+title + ' by ' + author+'</a>', parse_mode='HTML')
-            alternate = context.bot.sendMessage(chat_id = update.message.chat_id, text = 'This an alternate download link for the book:\n\n<a href=\''+alt_link + '\'>'+title + ' by ' + author+'</a>\n\n auto-deletes in 30 seconds', parse_mode='HTML')
-            time.sleep(30)
-            context.bot.delete_message(update.message.chat_id, alternate.message_id)
+            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
+            kb = InlineKeyboardMarkup(kb_list)
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Click the button to search', reply_markup = kb)
 
 
 
@@ -403,7 +413,7 @@ class AstroBot():
 
 
     def bot_help(self, update, context):
-        help_text = "Hello, these are the commands I will respond to:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/wiki <keyword>\" will produce a short summary and link to wikipedia\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" will fetch a weather update.\n\nTyping \"/book <bookname>\" will fetch the PDF version of the book from Library Genesis (May not find every book)\n\nIf you are looking for a news article use \"@HAC_AstroBot <search query>\"\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
+        help_text = "Hello, here's how I can help you:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/wiki <keyword>\" will produce a short summary and provide a link to wikipedia.\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" or sending a map location will fetch a weather update.\n\nTyping \"/book <bookname>\" will search for the book title on Library Genesis (May not find every book).\n\nTyping \"/news <search phrase>\" will search for related articles on Google News.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
         update.message.reply_text(help_text)
 
 
