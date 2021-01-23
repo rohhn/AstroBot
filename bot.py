@@ -39,7 +39,7 @@ def main():
     photobot_dispatcher.add_handler(CommandHandler('startapod', photobot.daily_job, pass_job_queue=True))
     photobot_dispatcher.add_handler(CommandHandler('stopapod', photobot.stop_func, pass_job_queue=True))
     photobot_dispatcher.add_handler(CommandHandler('help',photobot.help))
-    astrometry_handler  = ConversationHandler(entry_points = [CommandHandler('analyze',photobot.start_platesolve)],
+    astrometry_handler  = ConversationHandler(entry_points = [CommandHandler('analyze',start),CommandHandler('analyse',start)],
                                     states = {
                                         1: [MessageHandler(Filters.photo, photobot.platesolve)]},
                                     fallbacks =

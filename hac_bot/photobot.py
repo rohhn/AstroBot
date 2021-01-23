@@ -1,16 +1,15 @@
 from __future__ import absolute_import
+from telegram.ext import Updater, CommandHandler, JobQueue
+from telegram import Bot
 from bs4 import BeautifulSoup as bs4
 import requests
-from telegram import Bot
 import datetime
 import pytz
-import hashlib
-import re
-from telegram.ext import Updater, CommandHandler, JobQueue
-from hac_bot.astrobot import Helper
 import time
-from hac_bot.astrometry import Astrometry
 import json
+from hac_bot.astrometry import Astrometry
+from hac_bot.astrobot import Helper
+
 
 indt = pytz.timezone("Asia/Kolkata")
 
@@ -73,22 +72,17 @@ class PhotoBot():
     def check_job_status(self, jobid):
         time.sleep(30)
         job_status = self.astrometry.get_job_status(jobid)
-        print(job_status['status'])
         if job_status['status'] == 'success':
-            print('true')
             return True
         elif job_status['status'] == 'failure':
             return False
         else:
-            print('else')
             return(self.check_job_status(jobid))
 
     def check_job_creation(self, subid, count):
-        print(count)
         if count <5:
             time.sleep(30)
             submission_status = self.astrometry.get_submission_status(subid)
-            print(submission_status)
             if len(submission_status['jobs']) > 0 and submission_status['jobs'][0] is not None:
                 return True
             else:
@@ -101,7 +95,8 @@ class PhotoBot():
         try:
             file = context.bot.getFile(update.message.photo[-1].file_id)['file_path']
         except Exception as e:
-            return False
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
+            return -1
 
         upload_status = self.astrometry.url_upload(data={'request-json':json.dumps({'session':self.login_data['session'],'url':file, 'allow_commercial_usage':'n', 'allow_modifications':'n', 'publicly_visible':'n'})})
         if upload_status['status'] == 'success':
@@ -109,7 +104,6 @@ class PhotoBot():
             if self.check_job_creation(upload_status['subid'],1):
                 submission_status = self.astrometry.get_submission_status(upload_status['subid'])
                 jobid = submission_status['jobs'][0]
-                #context.bot.sendMessage(chat_id = update.message.chat_id, text="Analyzing...")
                 bot_msg.edit_text( text="Analyzing...")
                 if self.check_job_status(jobid):
                     final_image = self.astrometry.get_final_image(jobid)
