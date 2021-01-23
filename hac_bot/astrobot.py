@@ -19,7 +19,10 @@ ind_tz = pytz.timezone('Asia/Kolkata')
 class Helper():
 
     def __init__(self):
-        return
+        self.astrobot_help = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands."
+        self.photobot_help = "\n\n/analyze or /analyse- Generate a plate-solved image."
+        self.bookbot_help = "Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis"
+        #Commands for @HAC_PhotoBot:\n\n/
 
     def remove_job(self, name, context):
         cur_jobs = context.job_queue.get_jobs_by_name(name)
@@ -352,8 +355,6 @@ class AstroBot():
             results = list()
             if not query:
                 return
-            #print(query)
-            #print('_'*40)
             books = ls.search_title_filtered(params[0].strip(), filters)
             max_results = len(books) if len(books) < 5 else 5
             if books:
@@ -372,8 +373,6 @@ class AstroBot():
                         id="0",
                         title='No results found',
                         input_message_content= InputTextMessageContent(message_text='<a href=\'http://libgen.rs\'>Libgen Library</a>', parse_mode='HTML', disable_web_page_preview=True)))
-            #e = time.time()
-            #print(e-s)
             context.bot.answer_inline_query(update.inline_query.id, results)
             context.bot.delete_message(chat_id=self.x.chat.id, message_id = self.x.message_id)
 
@@ -388,12 +387,10 @@ class AstroBot():
         try:
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
             kb = InlineKeyboardMarkup(kb_list)
-            #context.bot.sendMessage(chat_id=update.message.chat_id, text=search_text, reply_markup = kb)
             update.message.reply_text(text=search_text, reply_markup = kb)
         except:
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
             kb = InlineKeyboardMarkup(kb_list)
-            #context.bot.sendMessage(chat_id=update.message.chat_id, text='Click the button to search', reply_markup = kb)
             self.x = update.message.reply_text(text='Click the button to search', reply_markup = kb)
             
 
@@ -417,27 +414,29 @@ class AstroBot():
 # ----------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------#
 
-
-    def bot_help(self, update, context):
-        help_text = "Hello, here's how I can help you:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/wiki <keyword>\" will produce a short summary and provide a link to wikipedia.\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" or sending a map location will fetch a weather update.\n\nTyping \"/book <bookname>\" will search for the book title on Library Genesis (Works on @LibgenLibrary_Bot).\n\nTyping \"/news <search phrase>\" will search for related articles on Google News.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
-        update.message.reply_text(help_text)
-
     def help(self, update, context):
         if update.message.chat.type == 'private':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands.')
+            context.bot.sendMessage(chat_id=update.message.chat_id, text= self.h.astrobot_help + self.h.photobot_help)
         else:
             inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
                         [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
                         [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
-            context.bot.sendMessage(chat_id= update.message.chat_id,text="Select which Bot to show commands for", reply_markup=InlineKeyboardMarkup(inline_kb))
+            context.bot.sendMessage(chat_id= update.message.chat_id,text="Show commands for:", reply_markup=InlineKeyboardMarkup(inline_kb))
+
 
     def callback_query_handler(self, update, context):
+
         if update.callback_query.data == 'astrobot':
-            update.callback_query.message.edit_text(text='Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands.')
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.astrobot_help + self.h.photobot_help)
         elif update.callback_query.data == 'photobot':
-            update.callback_query.message.edit_text(text='Commands for @HAC_PhotoBot:\n\n/analyze - Generate a plate-solved image.')
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.photobot_help)
         elif update.callback_query.data == 'bookbot':
-            update.callback_query.message.edit_text(text='Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis')
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.bookbot_help)
+        elif update.callback_query.data == 'menu':
+            inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
+                        [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
+                        [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup(inline_kb), text='Show commands for:')
 
     def books_alert(self, update, context):
         if(update.message.chat.type=='private'):

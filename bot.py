@@ -10,16 +10,16 @@ def main():
     BookBot_Token = open('config/bookbot.conf','r').read()
 
 
-    AstroBot_Updater = Updater(AstroBot_Token, use_context= True)
-    PhotoBot_Updater = Updater(PhotoBot_Token, use_context=True)
-    BookBot_Updater = Updater(BookBot_Token, use_context=True)
+    AstroBot_Updater = Updater(AstroBot_Token, use_context= True, workers= 32)
+    PhotoBot_Updater = Updater(PhotoBot_Token, use_context=True, workers= 32)
+    BookBot_Updater = Updater(BookBot_Token, use_context=True, workers= 32)
 
     astrobot = AstroBot()
     
-
+    photobot = PhotoBot()
     
     astrobot_dispatcher = AstroBot_Updater.dispatcher
-    astrobot_dispatcher.add_handler(CommandHandler('start',astrobot.bot_help))
+    #astrobot_dispatcher.add_handler(CommandHandler('start',astrobot.bot_help))
     astrobot_dispatcher.add_handler(CommandHandler('daily_articles',astrobot.get_article, pass_job_queue = True))
     astrobot_dispatcher.add_handler(CommandHandler('stop_daily_articles',astrobot.stop_func, pass_job_queue = True))
     astrobot_dispatcher.add_handler(CommandHandler('randomarticle',astrobot.random_article))
@@ -32,20 +32,25 @@ def main():
     astrobot_dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, astrobot.welcome_new_user))
     astrobot_dispatcher.add_handler(CommandHandler('book', astrobot.books_alert, pass_args=True))
     astrobot_dispatcher.add_handler(CallbackQueryHandler(astrobot.callback_query_handler, pass_chat_data=True))
+    astrometry_handler  = ConversationHandler(entry_points = [CommandHandler('analyze',photobot.start_platesolve),CommandHandler('analyse',photobot.start_platesolve)],
+                                    states = {
+                                        1: [MessageHandler(Filters.photo, photobot.platesolve)], 
+                                        -2: [MessageHandler(Filters.text | Filters.command, photobot.timeout)]
+                                        },
+                                    fallbacks =
+                                        [CommandHandler('cancel', photobot.cancel)],
+                                    conversation_timeout = 60,
+                                    )
+    astrobot_dispatcher.add_handler(astrometry_handler)
     AstroBot_Updater.start_polling()
+    
 
-    photobot = PhotoBot()
+    
     photobot_dispatcher = PhotoBot_Updater.dispatcher
     photobot_dispatcher.add_handler(CommandHandler('startapod', photobot.daily_job, pass_job_queue=True))
     photobot_dispatcher.add_handler(CommandHandler('stopapod', photobot.stop_func, pass_job_queue=True))
     photobot_dispatcher.add_handler(CommandHandler('help',photobot.help))
-    astrometry_handler  = ConversationHandler(entry_points = [CommandHandler('analyze',start),CommandHandler('analyse',start)],
-                                    states = {
-                                        1: [MessageHandler(Filters.photo, photobot.platesolve)]},
-                                    fallbacks =
-                                        [CommandHandler('cancel', photobot.cancel)]
-                                    )
-    photobot_dispatcher.add_handler(astrometry_handler)
+    
     PhotoBot_Updater.start_polling()
 
     bookbot_dispatcher = BookBot_Updater.dispatcher

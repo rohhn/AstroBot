@@ -29,22 +29,6 @@ class PhotoBot():
         date  = "Date: " + str(resp['date'])
         title = "APOD - " + resp['title']
         explanation = resp['explanation']
-        #try:
-        #    url   = resp['url']
-        #except:
-        #    url   = ""
-        #try:
-        #    date  = "Date: " + str(resp['date'])
-        #except:
-        #    date = ""
-        #try:
-        #    title = "APOD - " + resp['title']
-        #except:
-        #    title = "APOD"
-        #try:
-        #    explanation = resp['explanation']
-        #except:
-        #    explanation = ""
         try:
             context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str(title+"\n\n"+explanation+"\n" + date))
         except:
@@ -69,18 +53,21 @@ class PhotoBot():
         if(job_removed):
             context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
 
-    def check_job_status(self, jobid):
-        time.sleep(30)
-        job_status = self.astrometry.get_job_status(jobid)
-        if job_status['status'] == 'success':
-            return True
-        elif job_status['status'] == 'failure':
-            return False
+    def check_job_status(self, jobid, count):
+        if count <6:
+            time.sleep(30)
+            job_status = self.astrometry.get_job_status(jobid)
+            if job_status['status'] == 'success':
+                return True
+            elif job_status['status'] == 'failure':
+                return False
+            else:
+                return(self.check_job_status(jobid,count+1))
         else:
-            return(self.check_job_status(jobid))
+            return False
 
     def check_job_creation(self, subid, count):
-        if count <5:
+        if count <6:
             time.sleep(30)
             submission_status = self.astrometry.get_submission_status(subid)
             if len(submission_status['jobs']) > 0 and submission_status['jobs'][0] is not None:
@@ -93,19 +80,19 @@ class PhotoBot():
 
     def platesolve(self, update, context):
         try:
-            file = context.bot.getFile(update.message.photo[-1].file_id)['file_path']
+            file = update.message.photo[-1].get_file()['file_path']
         except Exception as e:
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
             return -1
 
         upload_status = self.astrometry.url_upload(data={'request-json':json.dumps({'session':self.login_data['session'],'url':file, 'allow_commercial_usage':'n', 'allow_modifications':'n', 'publicly_visible':'n'})})
         if upload_status['status'] == 'success':
-            bot_msg = context.bot.sendMessage(chat_id = update.message.chat_id, text="Uploaded successfully. Please wait...")
+            bot_msg = context.bot.sendMessage(chat_id = update.message.chat_id, text="Uploaded successfully. It may take up to 3 minutes to get a result.")
             if self.check_job_creation(upload_status['subid'],1):
                 submission_status = self.astrometry.get_submission_status(upload_status['subid'])
                 jobid = submission_status['jobs'][0]
                 bot_msg.edit_text( text="Analyzing...")
-                if self.check_job_status(jobid):
+                if self.check_job_status(jobid,1):
                     final_image = self.astrometry.get_final_image(jobid)
                     job_info = self.astrometry.get_job_info(jobid)
                     objects = ', '.join(job_info['objects_in_field'])
@@ -114,16 +101,22 @@ class PhotoBot():
                     context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image, caption=objects)
                     return -1
                 else:
-                    bot_msg.edit_text(text="Job Failed. Please try again.")
+                    bot_msg.edit_text(text="Unable to solve the given image.")
                     return -1
             else:
                 bot_msg.edit_text(text="Request timed out.")
                 return -1
+        else:
+            return -1
+
+    def timeout(self, update, context):
+        context.bot.sendMessage(chat_id=update.message.chat_id, text="Request timed out.")
+        return -1 
 
     def start_platesolve(self, update, context):
         self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
         if self.login_data['status'] == 'success':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Send me a picture.')
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Send me a picture to analyze.')
             return 1
         else:
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
