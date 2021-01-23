@@ -94,11 +94,14 @@ class PhotoBot():
                 bot_msg.edit_text( text="Analyzing...")
                 if self.check_job_status(jobid,1):
                     final_image = self.astrometry.get_final_image(jobid)
-                    job_info = self.astrometry.get_job_info(jobid)
-                    objects = ', '.join(job_info['objects_in_field'])
-                    objects = "Identified objects: " + objects
                     bot_msg.edit_text( text="Final image ready.")
-                    context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image, caption=objects)
+                    try:
+                        job_info = self.astrometry.get_job_info(jobid)
+                        objects = ', '.join(job_info['objects_in_field'])
+                        objects = "Identified objects: " + objects
+                        context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image, caption=objects)
+                    except:
+                        context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image)
                     return -1
                 else:
                     bot_msg.edit_text(text="Unable to solve the given image.")
