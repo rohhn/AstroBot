@@ -415,6 +415,7 @@ class AstroBot():
 # ----------------------------------------------------------------------------------------#
 
     def help(self, update, context):
+        #new help
         if update.message.chat.type == 'private':
             context.bot.sendMessage(chat_id=update.message.chat_id, text= self.h.astrobot_help + self.h.photobot_help)
         else:

@@ -127,6 +127,7 @@ class PhotoBot():
         return -1
 
     def help(self, update, context):
+        #new help
         if update.message.chat.type == 'private':
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Commands for @HAC_PhotoBot:\n\n/analyze - Generate a plate-solved image.')
 
