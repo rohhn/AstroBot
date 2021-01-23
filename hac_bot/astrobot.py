@@ -20,8 +20,8 @@ class Helper():
 
     def __init__(self):
         self.astrobot_help = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands."
-        self.photobot_help = "\n\n/analyze or /analyse- Generate a plate-solved image."
-        self.bookbot_help = "Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis"
+        self.photobot_help = "Commands for @HAC_PhotoBot:\n\n/analyze or /analyse - Plate-solve an astronomy image."
+        self.bookbot_help = "Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis."
         #Commands for @HAC_PhotoBot:\n\n/
 
     def remove_job(self, name, context):
@@ -329,75 +329,6 @@ class AstroBot():
             context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 
-# ----------------------------------------------------------------------------------------------#
-
-
-    def get_book_download_link(self,url):
-        #r = requests.get(url)
-        page = bs4((requests.get(url)).text, 'html.parser')
-        link = page.find('div', id='download').findAll('a')[1].attrs['href']
-        alt_link = page.find('div', id='download').findAll('a')[0].attrs['href']
-        return link, alt_link
-
-    def get_book_cover_img(self, url):
-        page = bs4((requests.get(url)).text, 'html.parser')
-        img_url = 'http://library.lol/' + page.find('img').attrs['src']
-        return img_url
-
-    '''INLINE FEATURE FOR BOOKS'''
-
-    def send_book(self, update, context):
-        #s = time.time()
-        query = update.inline_query.query
-        params = query.split(' by ')
-        try:
-            filters = {'Extension':'pdf'}
-            results = list()
-            if not query:
-                return
-            books = ls.search_title_filtered(params[0].strip(), filters)
-            max_results = len(books) if len(books) < 5 else 5
-            if books:
-                for i in range(max_results):
-                    results.append(
-                        InlineQueryResultArticle(
-                            id = books[i]['ID'],
-                            title = books[i]['Title'] + ' by ' + books[i]['Author'],
-                            input_message_content = InputTextMessageContent(message_text = '<a href=\''+self.get_book_download_link(books[i]['Mirror_1'])[0] + '\'>'+books[i]['Title'] + ' by ' + books[i]['Author']+'</a>', parse_mode= 'HTML')
-                            #url = self.get_book_cover_img(books[i]['Mirror_1'])
-                        )
-                    )
-            else:
-                results.append(
-                    InlineQueryResultArticle(
-                        id="0",
-                        title='No results found',
-                        input_message_content= InputTextMessageContent(message_text='<a href=\'http://libgen.rs\'>Libgen Library</a>', parse_mode='HTML', disable_web_page_preview=True)))
-            context.bot.answer_inline_query(update.inline_query.id, results)
-            context.bot.delete_message(chat_id=self.x.chat.id, message_id = self.x.message_id)
-
-        except:
-            print(str(sys.exc_info()))
-
-
-    def new_books(self, update, context):
-        search_text = ''
-        for i in context.args:
-            search_text += i + ' '
-        try:
-            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
-            kb = InlineKeyboardMarkup(kb_list)
-            update.message.reply_text(text=search_text, reply_markup = kb)
-        except:
-            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
-            kb = InlineKeyboardMarkup(kb_list)
-            self.x = update.message.reply_text(text='Click the button to search', reply_markup = kb)
-            
-
-
-
-
-
 # ------------------------------------ WELCOME NEW MEMBERS -------------------------------------#
 
     def welcome_new_user(self, update, context):
@@ -417,7 +348,7 @@ class AstroBot():
     def help(self, update, context):
         #new help
         if update.message.chat.type == 'private':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text= self.h.astrobot_help + self.h.photobot_help)
+            context.bot.sendMessage(chat_id=update.message.chat_id, text= self.h.astrobot_help)
         else:
             inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
                         [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
@@ -428,7 +359,7 @@ class AstroBot():
     def callback_query_handler(self, update, context):
 
         if update.callback_query.data == 'astrobot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.astrobot_help + self.h.photobot_help)
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.astrobot_help)
         elif update.callback_query.data == 'photobot':
             update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.photobot_help)
         elif update.callback_query.data == 'bookbot':
