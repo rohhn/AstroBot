@@ -68,7 +68,6 @@ class AstroBot():
         self.h = Helper()
 
 
-
 # ------------------- GENERATE RANDOM ARTICLES FROM POOL OF TOPICS ----------------------#
 
     def get_random_article(self):
@@ -157,11 +156,13 @@ class AstroBot():
         try:
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
             kb = InlineKeyboardMarkup(kb_list)
-            context.bot.sendMessage(chat_id=update.message.chat_id, text=search_text.strip(), reply_markup = kb)
+            self.x= update.message.reply_text(text=search_text.strip(), reply_markup = kb)
         except:
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
             kb = InlineKeyboardMarkup(kb_list)
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Click the button to search', reply_markup = kb)
+            self.x= update.message.reply_text(text='Click the button to search', reply_markup = kb)
+            #time.sleep(10)
+            #context.bot.delete_message(chat_id=x.chat.id, message_id = x.message_id)
 
         
     def news_articles_inline(self, update, context):
@@ -189,6 +190,9 @@ class AstroBot():
                     input_message_content= InputTextMessageContent(message_text="No results found")))
 
         context.bot.answer_inline_query(update.inline_query.id, results)
+        #self.delete_request_message()
+        #time.sleep(10)
+        context.bot.delete_message(chat_id=self.x.chat.id, message_id = self.x.message_id)
 
 # ----------------------------------------------------------------------------------------------#
 
@@ -287,7 +291,7 @@ class AstroBot():
                 update.message.reply_photo(caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
             except:
-                context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
+                update.message.reply_text(text="Error in retrieving data.")
                 context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
         except Exception as e:
             context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(current_location_weather):\n" + str(e))
@@ -305,9 +309,9 @@ class AstroBot():
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
                 kb_list = [[KeyboardButton(text='Send Current Location', request_location=True)]]
                 kb = ReplyKeyboardMarkup(kb_list, one_time_keyboard= True)
-                context.bot.sendMessage(chat_id=update.message.chat_id, text="Please include a location or click the button to send current location.", reply_markup = kb)
+                update.message.reply_text(text="Please include a location or click the button to send current location.", reply_markup = kb)
             else:
-                context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
+                update.message.reply_text(text='Please include a location.')
             return
         else:
             lat, lon = self.h.get_coordintes(search_text)
@@ -315,10 +319,10 @@ class AstroBot():
         try:    
             weather_message, moon_photo = self.weather_data(lat, lon)
             bortle_info = self.bortle_info(lat, lon)
-            context.bot.sendPhoto(chat_id=update.message.chat_id, caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
+            update.message.reply_photo(caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
             #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
         except:
-            context.bot.sendMessage(chat_id=update.message.chat_id, text="Error in retrieving data.")
+            update.message.reply_text(text="Error in retrieving data.")
             context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
 
 
@@ -371,24 +375,27 @@ class AstroBot():
             #e = time.time()
             #print(e-s)
             context.bot.answer_inline_query(update.inline_query.id, results)
+            context.bot.delete_message(chat_id=self.x.chat.id, message_id = self.x.message_id)
 
         except:
             print(str(sys.exc_info()))
 
 
     def new_books(self, update, context):
-        filters = {'Extension':'pdf'}
         search_text = ''
         for i in context.args:
             search_text += i + ' '
         try:
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
             kb = InlineKeyboardMarkup(kb_list)
-            context.bot.sendMessage(chat_id=update.message.chat_id, text=search_text, reply_markup = kb)
+            #context.bot.sendMessage(chat_id=update.message.chat_id, text=search_text, reply_markup = kb)
+            update.message.reply_text(text=search_text, reply_markup = kb)
         except:
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
             kb = InlineKeyboardMarkup(kb_list)
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Click the button to search', reply_markup = kb)
+            #context.bot.sendMessage(chat_id=update.message.chat_id, text='Click the button to search', reply_markup = kb)
+            self.x = update.message.reply_text(text='Click the button to search', reply_markup = kb)
+            
 
 
 
@@ -398,14 +405,13 @@ class AstroBot():
 
     def welcome_new_user(self, update, context):
         for new_user_obj in update.message.new_chat_members:
-            chat_id = update.message.chat_id
             new_usr = ""
-            message=r"Welcome to Hyderabad Astronomy Club $user! Please introduce yourself and tell us what you're interested in." # Welcome message
+            message=r"Welcome to $title $user! Please introduce yourself and tell us what you're interested in." # Welcome message
             try:
                 new_usr = '@' + new_user_obj['username']
             except:
                 new_usr = new_user_obj['first_name']
-        context.bot.sendMessage(chat_id, text = message.replace('$user',new_usr))
+        context.bot.sendMessage(chat_id=update.message.chat_id, text = message.replace('$user',new_usr).replace('$title',update.message.chat.title))
 
 
 # ----------------------------------------------------------------------------------------#
@@ -413,8 +419,30 @@ class AstroBot():
 
 
     def bot_help(self, update, context):
-        help_text = "Hello, here's how I can help you:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/wiki <keyword>\" will produce a short summary and provide a link to wikipedia.\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" or sending a map location will fetch a weather update.\n\nTyping \"/book <bookname>\" will search for the book title on Library Genesis (May not find every book).\n\nTyping \"/news <search phrase>\" will search for related articles on Google News.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
+        help_text = "Hello, here's how I can help you:\n\nTyping \"/randomarticle\" will fetch a random article related to an astronomy subject.\n\nTyping \"/wiki <keyword>\" will produce a short summary and provide a link to wikipedia.\n\nTyping \"/weather <latitude, longitude>\" or \"/weather <location name>\" or sending a map location will fetch a weather update.\n\nTyping \"/book <bookname>\" will search for the book title on Library Genesis (Works on @LibgenLibrary_Bot).\n\nTyping \"/news <search phrase>\" will search for related articles on Google News.\n\nTyping \"/help\" will show you all the current list of commands I can respond to."
         update.message.reply_text(help_text)
+
+    def help(self, update, context):
+        if update.message.chat.type == 'private':
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands.')
+        else:
+            inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
+                        [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
+                        [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
+            context.bot.sendMessage(chat_id= update.message.chat_id,text="Select which Bot to show commands for", reply_markup=InlineKeyboardMarkup(inline_kb))
+
+    def callback_query_handler(self, update, context):
+        if update.callback_query.data == 'astrobot':
+            update.callback_query.message.edit_text(text='Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands.')
+        elif update.callback_query.data == 'photobot':
+            update.callback_query.message.edit_text(text='Commands for @HAC_PhotoBot:\n\n/analyze - Generate a plate-solved image.')
+        elif update.callback_query.data == 'bookbot':
+            update.callback_query.message.edit_text(text='Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis')
+
+    def books_alert(self, update, context):
+        if(update.message.chat.type=='private'):
+            text = "Please use @LibgenLibrary_Bot to search books"
+            update.message.reply_text(text)
 
 
 
