@@ -11,3 +11,5 @@ unicode_characters
 *.ipynb
 config/
 hac_bot/__pycache__/
+pyenv.cfg
+share/
