@@ -232,7 +232,7 @@ class AstroBot():
                 text = summary_text + "\n\n" + wiki_link
                 return(text)
             except:
-                #context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(scrape_wiki):\n" + str(sys.exc_info()))
+                context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 235 - scrape_wiki):\n" + str(sys.exc_info()))
                 return("Cannot find Wikipedia page.")
                 
     
@@ -290,14 +290,17 @@ class AstroBot():
             lon = update.message.location.longitude           
             try:    
                 weather_message, moon_photo = self.weather_data(lat, lon)
-                bortle_info = self.bortle_info(lat, lon)
+                try:
+                    bortle_info = self.bortle_info(lat, lon)
+                except:
+                    bortle_info = ""
                 update.message.reply_photo(caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
             except:
                 update.message.reply_text(text="Error in retrieving data.")
-                context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
+                context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 301 - current_location_weather):\n" + str(sys.exc_info()))
         except Exception as e:
-            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(current_location_weather):\n" + str(e))
+            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 303 - current_location_weather):\n" + str(e))
 
 
     def get_weather(self, update, context):
@@ -317,7 +320,11 @@ class AstroBot():
                 update.message.reply_text(text='Please include a location.')
             return
         else:
-            lat, lon = self.h.get_coordintes(search_text)
+            try:
+                lat, lon = self.h.get_coordintes(search_text)
+            except:
+                update.message.reply_text(text='Invalid location.')
+                return
                        
         try:    
             weather_message, moon_photo = self.weather_data(lat, lon)
@@ -326,7 +333,7 @@ class AstroBot():
             #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
         except:
             update.message.reply_text(text="Error in retrieving data.")
-            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(get_weather):\n" + str(sys.exc_info()))
+            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
 
 
 # ------------------------------------ WELCOME NEW MEMBERS -------------------------------------#
@@ -374,7 +381,6 @@ class AstroBot():
         if(update.message.chat.type=='private'):
             text = "Please use @LibgenLibrary_Bot to search books"
             update.message.reply_text(text)
-
 
 
     

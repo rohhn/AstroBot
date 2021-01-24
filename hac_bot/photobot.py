@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from telegram.ext import Updater, CommandHandler, JobQueue
-from telegram import Bot
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from bs4 import BeautifulSoup as bs4
 import requests
 import datetime
@@ -54,8 +54,8 @@ class PhotoBot():
             context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
 
     def check_job_status(self, jobid, count):
-        if count <6:
-            time.sleep(30)
+        if count <11:
+            time.sleep(15)
             job_status = self.astrometry.get_job_status(jobid)
             if job_status['status'] == 'success':
                 return True
@@ -67,8 +67,8 @@ class PhotoBot():
             return False
 
     def check_job_creation(self, subid, count):
-        if count <6:
-            time.sleep(30)
+        if count <11:
+            time.sleep(15)
             submission_status = self.astrometry.get_submission_status(subid)
             if len(submission_status['jobs']) > 0 and submission_status['jobs'][0] is not None:
                 return True
@@ -87,7 +87,7 @@ class PhotoBot():
 
         upload_status = self.astrometry.url_upload(data={'request-json':json.dumps({'session':self.login_data['session'],'url':file, 'allow_commercial_usage':'n', 'allow_modifications':'n', 'publicly_visible':'n'})})
         if upload_status['status'] == 'success':
-            bot_msg = context.bot.sendMessage(chat_id = update.message.chat_id, text="Uploaded successfully. It may take up to 3 minutes to get a result.")
+            bot_msg = update.message.reply_text(text="Uploaded successfully. It may take up to 3 minutes to get a result.")
             if self.check_job_creation(upload_status['subid'],1):
                 submission_status = self.astrometry.get_submission_status(upload_status['subid'])
                 jobid = submission_status['jobs'][0]
@@ -98,28 +98,38 @@ class PhotoBot():
                     try:
                         job_info = self.astrometry.get_job_info(jobid)
                         objects = ', '.join(job_info['objects_in_field'])
-                        objects = "Identified objects: " + objects
-                        context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image, caption=objects)
-                    except:
+                        self.objects = "Identified objects: " + objects
+                        self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="listobjects")]]))
+                    except Exception as e:
+                        print(e)
                         context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image)
                     return -1
                 else:
                     bot_msg.edit_text(text="Unable to solve the given image.")
                     return -1
             else:
-                bot_msg.edit_text(text="Request timed out.")
+                bot_msg.edit_text(text="Job took too long. Request closed.")
                 return -1
         else:
             return -1
 
+    def callback_query_handler(self, update, context):
+        #update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="og")]]) ,caption=self.objects)
+        if update.callback_query.data == 'listobjects':
+            #context.bot.sendMessage(chat_id=update.message.chat_id, text="in callback handler")
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back")]]) ,caption=self.objects)
+        elif update.callback_query.data == 'back':
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="List identified objects", callback_data="listobjects")]]) ,caption="")
+
     def timeout(self, update, context):
-        context.bot.sendMessage(chat_id=update.message.chat_id, text="Request timed out.")
+        #context.bot.sendMessage(chat_id=update.message.chat_id, text="Your request timed out. Please try again.")
+        self.req_msg.edit_text(text="Your request timed out. Please try again.")
         return -1 
 
     def start_platesolve(self, update, context):
         self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
         if self.login_data['status'] == 'success':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Send me a picture to analyze.')
+            self.req_msg = update.message.reply_text(text='Send me a picture to analyze.')
             return 1
         else:
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
