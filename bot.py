@@ -8,7 +8,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Inlin
 
 def main():
     AstroBot_Token = open('config/astrobot.conf','r').read()
-    PhotoBot_Token = open('config/testbot.conf', 'r').read()
+    PhotoBot_Token = open('config/photobot.conf', 'r').read()
     BookBot_Token = open('config/bookbot.conf','r').read()
 
     AstroBot_Updater = Updater(AstroBot_Token, use_context= True, workers= 32)
