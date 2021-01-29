@@ -9,9 +9,14 @@ import time
 import json
 from hac_bot.astrometry import Astrometry
 from hac_bot.astrobot import Helper
+import re
 
 
 indt = pytz.timezone("Asia/Kolkata")
+
+f = open('testing/deep_sky_objects.json','r')
+deep_sky_info = json.load(f)
+f.close()
 
 class PhotoBot():
 
@@ -41,7 +46,6 @@ class PhotoBot():
         job_removed= self.h.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
-            time.sleep(10)
             context.bot.delete_message(update.message.chat_id, r.message_id)
 
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
@@ -97,9 +101,22 @@ class PhotoBot():
                     bot_msg.edit_text( text="Final image ready.")
                     try:
                         job_info = self.astrometry.get_job_info(jobid)
+                        self.detailed_msg = ""
+                        for obj in job_info['objects_in_field']:
+                            if re.search('^M ', obj):
+                                obj = re.sub("M ","Messier ", obj)
+                            try:
+                                x = [t for t in deep_sky_info if t['object name'].lower() == obj.lower().strip()][0]
+                                try:
+                                    msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'])
+                                except:
+                                    msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ')
+                                self.detailed_msg = self.detailed_msg + msg + '\n\n'
+                            except:
+                                print(obj)
                         objects = ', '.join(job_info['objects_in_field'])
                         self.objects = "Identified objects: " + objects
-                        self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="listobjects")]]))
+                        self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="listobjects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailedobjects")]]))
                     except Exception as e:
                         print(e)
                         context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image)
@@ -114,12 +131,12 @@ class PhotoBot():
             return -1
 
     def callback_query_handler(self, update, context):
-        #update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="og")]]) ,caption=self.objects)
         if update.callback_query.data == 'listobjects':
-            #context.bot.sendMessage(chat_id=update.message.chat_id, text="in callback handler")
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back")]]) ,caption=self.objects)
+        if update.callback_query.data == 'detailedobjects':
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back")]]) ,caption=self.detailed_msg)
         elif update.callback_query.data == 'back':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="List identified objects", callback_data="listobjects")]]) ,caption="")
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="List identified objects", callback_data="listobjects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailedobjects")]]) ,caption="")
 
     def timeout(self, update, context):
         #context.bot.sendMessage(chat_id=update.message.chat_id, text="Your request timed out. Please try again.")
@@ -127,13 +144,17 @@ class PhotoBot():
         return -1 
 
     def start_platesolve(self, update, context):
+        #if update.message.chat.type == 'private':
         self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
         if self.login_data['status'] == 'success':
-            self.req_msg = update.message.reply_text(text='Send me a picture to analyze.')
+            self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
             return 1
         else:
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
             return -1
+        #else:
+        #    self.req_msg = update.message.reply_text(text='This feature is only available in private chat with @HAC_PhotoBot')
+        #    return -1
 
     def cancel(self, update, context):
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Cancelled request.")

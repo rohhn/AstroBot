@@ -119,7 +119,6 @@ class AstroBot():
         job_removed= self.h.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
-            time.sleep(10)
             context.bot.delete_message(update.message.chat_id, r.message_id)
             
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles related to astronomy will be everyday.\n\n Clear Skies!")
