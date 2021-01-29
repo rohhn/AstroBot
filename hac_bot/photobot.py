@@ -144,17 +144,17 @@ class PhotoBot():
         return -1 
 
     def start_platesolve(self, update, context):
-        #if update.message.chat.type == 'private':
-        self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
-        if self.login_data['status'] == 'success':
-            self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
-            return 1
+        if update.message.chat.type == 'private':
+            self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
+            if self.login_data['status'] == 'success':
+                self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
+                return 1
+            else:
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
+                return -1
         else:
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
+            self.req_msg = update.message.reply_text(text='This feature is only available in private chat with @HAC_PhotoBot')
             return -1
-        #else:
-        #    self.req_msg = update.message.reply_text(text='This feature is only available in private chat with @HAC_PhotoBot')
-        #    return -1
 
     def cancel(self, update, context):
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Cancelled request.")
