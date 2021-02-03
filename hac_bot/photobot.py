@@ -14,7 +14,7 @@ import re
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('testing/deep_sky_objects.json','r')
+f = open('deep_sky_objects.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
