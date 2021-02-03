@@ -49,6 +49,7 @@ def main():
                                     )
     photobot_dispatcher.add_handler(astrometry_handler)
     photobot_dispatcher.add_handler(CallbackQueryHandler(photobot.callback_query_handler, pass_chat_data=True))
+    photobot_dispatcher.add_handler(MessageHandler(Filters.regex('@HAC_PhotoBot tell me about'), photobot.get_dso_data, run_async=True))
     PhotoBot_Updater.start_polling()
 
     bookbot = BookBot()

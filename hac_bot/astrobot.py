@@ -20,7 +20,7 @@ class Helper():
 
     def __init__(self):
         self.astrobot_help = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands."
-        self.photobot_help = "Commands for @HAC_PhotoBot:\n\n/analyze or /analyse - Plate-solve an astronomy image."
+        self.photobot_help = "Commands for @HAC_PhotoBot:\n\n/analyze or /analyse - Plate-solve an astronomy image.\n\nAsk the bot information about any DSO by typing \"@HAC_PhotoBot tell me about <DSO Name>\""
         self.bookbot_help = "Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis."
         #Commands for @HAC_PhotoBot:\n\n/
 
