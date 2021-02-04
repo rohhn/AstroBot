@@ -3,3 +3,4 @@ testing/
 .DS_Store
 .DS_Store/
 pyenv.cfg
+hac_bot/__pycache__/

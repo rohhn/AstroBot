@@ -14,7 +14,7 @@ import re
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('deep_sky_objects.json','r')
+f = open('new_dso.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
@@ -141,7 +141,7 @@ class PhotoBot():
         return -1 
 
     def start_platesolve(self, update, context):
-        if update.message.chat.type == 'private':
+        if update.message.chat.type == 'private' or str(update.message.chat_id) == str(open('config/test_chat.conf','r').read()):
             self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
             if self.login_data['status'] == 'success':
                 self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
@@ -160,10 +160,11 @@ class PhotoBot():
 # ------------------------------------ GET INFO ON DEEPSKY OBJECTS -------------------------------------#
 
     def get_dso_data(self, update, context):
-        if update.message.text.split('@HAC_PhotoBot tell me about')[1].strip() != '':
-            search_object = update.message.text.split('@HAC_PhotoBot tell me about')[1].strip()
+        if update.message.text.lower().split('@hac_photobot tell me about')[1].strip() != '':
+            search_object = update.message.text.lower().split('@hac_photobot tell me about')[1].strip()
+            
             ignore_keys = ['object name', 'object type', 'constellation', 'deep_sky_image_link', 'visibility']
-            print(search_object)
+            
             if re.search('m[ ]*[0-9]+', search_object.lower()):
                 search_object = re.sub('m[ ]*',"Messier ", search_object.lower())
             elif re.search('messier[0-9]+', search_object.lower()):
@@ -176,15 +177,22 @@ class PhotoBot():
             try:
                 self.full_detail_msg = ""
                 self.dso_msg = ""
-                found_object = [t for t in deep_sky_info if search_object.lower().strip()==t['object name'].lower()]
+                for t in deep_sky_info:
+                    for name in t['object name']:
+                        if name.lower() == search_object.lower().strip():
+                            found_object = [t]
+                #found_object = [t for t in deep_sky_info if [search_object.lower().strip() == name.lower() for name in t['object name']]]
+                #found_object = [t for t in deep_sky_info if search_object.lower().strip() in t['object name'].lower()]
                 #found_object = [t for t in deep_sky_info if re.search(search_object.lower().strip(), t['object name'].lower())]
                 if found_object:
                     for x in found_object:
                         img_link = x['deep_sky_image_link']
                         try:
-                            self.dso_msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
+                            names = '/'.join(x['object name'])
+                            #self.dso_msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
+                            self.dso_msg = str(names + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
                         except:
-                            self.dso_msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
+                            self.dso_msg = str(names+ ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
                         keys = [key for key in x if key not in ignore_keys]
                         for key in x:
                             if key not in ignore_keys:
