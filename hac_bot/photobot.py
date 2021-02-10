@@ -14,7 +14,7 @@ import re
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('new_dso.json','r')
+f = open('testing/new_dso.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
@@ -88,9 +88,20 @@ class PhotoBot():
 
     def platesolve(self, update, context):
         try:
-            file = update.message.photo[-1].get_file()['file_path']
+            if update.message.photo:
+                file = update.message.photo[-1].get_file()['file_path']
+            else:
+                if update.message.document.mime_type == 'image/jpeg' or update.message.document.mime_type == 'image/png':
+                    file = update.message.document.get_file()['file_path']
+                else:
+                    raise Exception('non-image')
         except Exception as e:
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
+            if str(e) == 'non-image':
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='Only JPEG/PNG file types supported.')
+            elif str(e) == 'Timed out':
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='File size too large. Limit 5MB')
+            else:
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
             return -1
 
         upload_status = self.astrometry.url_upload(data={'request-json':json.dumps({'session':self.login_data['session'],'url':file, 'allow_commercial_usage':'n', 'allow_modifications':'n', 'publicly_visible':'n'})})
@@ -110,13 +121,16 @@ class PhotoBot():
                             if re.search('^M ', obj):
                                 obj = re.sub("M ","Messier ", obj)
                             try:
-                                x = [t for t in deep_sky_info if t['object name'].lower() == obj.lower().strip()][0]
-                                try:
-                                    msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'])
-                                except:
-                                    msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ')
-                                self.detailed_msg = self.detailed_msg + msg + '\n\n'
-                            except:
+                                for t in deep_sky_info:
+                                    for name in t['object name']:
+                                        if name.lower() == obj.lower().strip():
+                                            names = '/'.join(t['object name'])
+                                            try:
+                                                msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ' + t['visibility'])
+                                            except:
+                                                msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ')
+                                            self.detailed_msg = self.detailed_msg + msg + '\n\n'
+                            except Exception as e:
                                 print(obj)
                         objects = ', '.join(job_info['objects_in_field'])
                         self.objects = "Identified objects: " + objects
@@ -136,7 +150,6 @@ class PhotoBot():
 
 
     def timeout(self, update, context):
-        #context.bot.sendMessage(chat_id=update.message.chat_id, text="Your request timed out. Please try again.")
         self.req_msg.edit_text(text="Your request timed out. Please try again.")
         return -1 
 
@@ -181,15 +194,11 @@ class PhotoBot():
                     for name in t['object name']:
                         if name.lower() == search_object.lower().strip():
                             found_object = [t]
-                #found_object = [t for t in deep_sky_info if [search_object.lower().strip() == name.lower() for name in t['object name']]]
-                #found_object = [t for t in deep_sky_info if search_object.lower().strip() in t['object name'].lower()]
-                #found_object = [t for t in deep_sky_info if re.search(search_object.lower().strip(), t['object name'].lower())]
                 if found_object:
                     for x in found_object:
                         img_link = x['deep_sky_image_link']
                         try:
                             names = '/'.join(x['object name'])
-                            #self.dso_msg = str(x['object name'] + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
                             self.dso_msg = str(names + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
                         except:
                             self.dso_msg = str(names+ ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
