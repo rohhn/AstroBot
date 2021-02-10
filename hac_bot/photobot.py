@@ -14,7 +14,7 @@ import re
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('testing/new_dso.json','r')
+f = open('new_dso.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
@@ -131,7 +131,7 @@ class PhotoBot():
                                                 msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ')
                                             self.detailed_msg = self.detailed_msg + msg + '\n\n'
                             except Exception as e:
-                                print(obj)
+                                print('Uknown object: {}'.format(obj))
                         objects = ', '.join(job_info['objects_in_field'])
                         self.objects = "Identified objects: " + objects
                         self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]))
@@ -155,12 +155,19 @@ class PhotoBot():
 
     def start_platesolve(self, update, context):
         if update.message.chat.type == 'private' or str(update.message.chat_id) == str(open('config/test_chat.conf','r').read()):
-            self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
-            if self.login_data['status'] == 'success':
-                self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
-                return 1
-            else:
-                context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
+            try:
+                self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
+                if self.login_data['status'] == 'success':
+                    self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
+                    return 1
+                else:
+                    context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
+                    return -1
+            except ConnectionError:
+                self.req_msg = update.message.reply_text(text='Connection error. Please try again.')
+                return -1
+            except:
+                self.req_msg = update.message.reply_text(text='Systems down. Please report the error to the admins.')
                 return -1
         else:
             self.req_msg = update.message.reply_text(text='This feature is only available in private chat with @HAC_PhotoBot')
@@ -211,7 +218,6 @@ class PhotoBot():
                     msg = 'Object '+ search_object +' not found'
                     update.message.reply_text(text=msg)
             except Exception as e:
-                print(e)
                 msg = 'Object '+ search_object +' not found'
                 update.message.reply_text(text=msg)
         else:
