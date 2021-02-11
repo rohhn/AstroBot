@@ -134,10 +134,16 @@ class PhotoBot():
                                 print('Uknown object: {}'.format(obj))
                         objects = ', '.join(job_info['objects_in_field'])
                         self.objects = "Identified objects: " + objects
-                        self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]))
+                        try:
+                            self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]))
+                        except:
+                            self.astrometry_image_msg = update.message.reply_text(text="Unable to fetch final image.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]))
                     except Exception as e:
                         print(e)
-                        context.bot.sendPhoto(chat_id = update.message.chat_id, photo= final_image)
+                        try:
+                            update.message.reply_photo(photo= final_image)
+                        except:
+                            update.message.reply_text(text = 'Unable to fetch final image.')
                     return -1
                 else:
                     bot_msg.edit_text(text="Unable to solve the given image.")
