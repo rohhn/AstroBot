@@ -113,6 +113,7 @@ class PhotoBot():
                 bot_msg.edit_text( text="Analyzing...")
                 if self.check_job_status(jobid,1):
                     final_image = self.astrometry.get_final_image(jobid)
+                    
                     bot_msg.edit_text( text="Final image ready.")
                     try:
                         job_info = self.astrometry.get_job_info(jobid)
@@ -129,7 +130,12 @@ class PhotoBot():
                                                 msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ' + t['visibility'])
                                             except:
                                                 msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ')
-                                            self.detailed_msg = self.detailed_msg + msg + '\n\n'
+                                            if re.match(msg, self.detailed_msg):
+                                                msg = ""
+                                            else:
+                                                self.detailed_msg = self.detailed_msg + msg + '\n\n'
+                                            
+
                             except Exception as e:
                                 print('Uknown object: {}'.format(obj))
                         objects = ', '.join(job_info['objects_in_field'])
@@ -250,5 +256,6 @@ class PhotoBot():
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back_dso_data")]]) ,caption=self.full_detail_msg)
         elif update.callback_query.data == 'back_dso_data':
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Get detailed information", callback_data="full_dso_data")]]) ,caption=self.dso_msg)
+
 
 
