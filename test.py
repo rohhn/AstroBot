@@ -43,7 +43,7 @@ def main():
                                     port=int(PORT),
                                     url_path=TOKEN)
     
-    AstroBot_Updater.bot.setWebhook('https://hac-bots.herokuapp.com/'+TOKEN)
+    AstroBot_Updater.bot.setWebhook('https://hac-bot.herokuapp.com/'+TOKEN)
     AstroBot_Updater.idle()
 
 
