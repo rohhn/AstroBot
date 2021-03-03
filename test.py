@@ -38,12 +38,12 @@ def main():
     #astrobot_dispatcher.add_handler(MessageHandler(Filters.all, test))
     #astrobot_dispatcher.add_handler(MessageHandler((Filters.regex(re.compile(r'tell me about', re.IGNORECASE))) | (Filters.regex(re.compile(r'tell me about', re.IGNORECASE)) & Filters.entity('mention')), test))
     #astrobot_dispatcher.add_handler(MessageHandler(Filters.photo, photo_func))
-    AstroBot_Updater.start_polling()
-    #AstroBot_Updater.start_webhook(listen='0.0.0.0',
-    #                                port=int(PORT),
-    #                                url_path=TOKEN)
+    #AstroBot_Updater.start_polling()
+    AstroBot_Updater.start_webhook(listen='0.0.0.0',
+                                    port=int(PORT),
+                                    url_path=TOKEN)
     
-    #AstroBot_Updater.bot.setWebhook('https://hac-bots.herokuapp.com/'+TOKEN)
+    AstroBot_Updater.bot.setWebhook('https://hac-bots.herokuapp.com/'+TOKEN)
     AstroBot_Updater.idle()
 
 
