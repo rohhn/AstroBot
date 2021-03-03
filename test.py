@@ -38,7 +38,7 @@ def photo_func(update, context):
     print(update.message.photo[-1])
 
 def test(update, context):
-    context.bot.reply_text('heard')
+    update.message.reply_text('heard')
 
 def main():
     TOKEN = "1183471904:AAFTQWt9L9_q79sDzhU7WCtWK573bl7eCiU"
