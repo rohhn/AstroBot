@@ -44,8 +44,9 @@ def main():
     TOKEN = "1183471904:AAFTQWt9L9_q79sDzhU7WCtWK573bl7eCiU"
     AstroBot_Updater = Updater(TOKEN, use_context= True, workers=32)
     astrobot_dispatcher = AstroBot_Updater.dispatcher
+    astrobot_dispatcher.add_handler(CommandHandler('yo',test))
     #astrobot_dispatcher.add_handler(MessageHandler(Filters.all, test))
-    astrobot_dispatcher.add_handler(MessageHandler((Filters.regex(re.compile(r'tell me about', re.IGNORECASE))) | (Filters.regex(re.compile(r'tell me about', re.IGNORECASE)) & Filters.entity('mention')), test))
+    #astrobot_dispatcher.add_handler(MessageHandler((Filters.regex(re.compile(r'tell me about', re.IGNORECASE))) | (Filters.regex(re.compile(r'tell me about', re.IGNORECASE)) & Filters.entity('mention')), test))
     #astrobot_dispatcher.add_handler(MessageHandler(Filters.photo, photo_func))
     #AstroBot_Updater.start_polling()
     AstroBot_Updater.start_webhook(listen='0.0.0.0',
