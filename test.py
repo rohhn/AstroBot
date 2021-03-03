@@ -1,15 +1,5 @@
-from __future__ import absolute_import
-from hac_bot.astrometry import Astrometry
 from telegram.ext import Updater, CommandHandler, JobQueue, Filters
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from bs4 import BeautifulSoup as bs4
-import requests
-import datetime
-import pytz
-import time
-import json
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
-import re
 import os
 #from hac_bot.astrobot import Helper
 
@@ -48,12 +38,12 @@ def main():
     #astrobot_dispatcher.add_handler(MessageHandler(Filters.all, test))
     #astrobot_dispatcher.add_handler(MessageHandler((Filters.regex(re.compile(r'tell me about', re.IGNORECASE))) | (Filters.regex(re.compile(r'tell me about', re.IGNORECASE)) & Filters.entity('mention')), test))
     #astrobot_dispatcher.add_handler(MessageHandler(Filters.photo, photo_func))
-    #AstroBot_Updater.start_polling()
-    AstroBot_Updater.start_webhook(listen='0.0.0.0',
-                                    port=int(PORT),
-                                    url_path=TOKEN)
+    AstroBot_Updater.start_polling()
+    #AstroBot_Updater.start_webhook(listen='0.0.0.0',
+    #                                port=int(PORT),
+    #                                url_path=TOKEN)
     
-    AstroBot_Updater.bot.setWebhook('https://hac-bots.herokuapp.com/'+TOKEN)
+    #AstroBot_Updater.bot.setWebhook('https://hac-bots.herokuapp.com/'+TOKEN)
     AstroBot_Updater.idle()
 
 
