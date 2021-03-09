@@ -231,7 +231,6 @@ class AstroBot():
                 text = summary_text + "\n\n" + wiki_link
                 return(text)
             except:
-                context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 235 - scrape_wiki):\n" + str(sys.exc_info()))
                 return("Cannot find Wikipedia page.")
                 
     
@@ -288,12 +287,12 @@ class AstroBot():
             lat = update.message.location.latitude
             lon = update.message.location.longitude           
             try:    
-                weather_message, moon_photo = self.weather_data(lat, lon)
+                self.weather_msg, moon_photo = self.weather_data(lat, lon)
                 try:
-                    bortle_info = self.bortle_info(lat, lon)
+                    self.bortle_msg = self.bortle_info(lat, lon)
                 except:
-                    bortle_info = ""
-                update.message.reply_photo(caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
+                    self.bortle_msg = ""
+                update.message.reply_photo(caption = self.weather_msg +"\n————————————\n", photo=moon_photo, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
             except:
                 update.message.reply_text(text="Error in retrieving data.")
@@ -340,7 +339,7 @@ class AstroBot():
     def welcome_new_user(self, update, context):
         for new_user_obj in update.message.new_chat_members:
             new_usr = ""
-            message=r"Welcome to $title $user! Please introduce yourself and tell us what you're interested in." # Welcome message
+            message=r"Welcome to $title, $user! Please introduce yourself and share what excites you the most about astronomy." # Welcome message
             try:
                 new_usr = '@' + new_user_obj['username']
             except:
@@ -375,6 +374,10 @@ class AstroBot():
                         [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
                         [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
             update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup(inline_kb), text='Show commands for:')
+        elif update.callback_query.data == 'bortle_info':
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Weather info", callback_data="weather_info")]]) ,text=self.bortle_msg)
+        elif update.callback_query.data == 'weather_info':
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle info", callback_data="bortle_info")]]) ,text=self.weather_msg)
 
     def books_alert(self, update, context):
         if(update.message.chat.type=='private'):

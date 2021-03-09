@@ -221,7 +221,7 @@ class PhotoBot():
                             self.dso_msg = str(names + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
                         except:
                             self.dso_msg = str(names+ ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
-                        keys = [key for key in x if key not in ignore_keys]
+                        
                         for key in x:
                             if key not in ignore_keys:
                                 self.full_detail_msg += '\n' + key + ': ' + x[key]
