@@ -292,7 +292,7 @@ class AstroBot():
                     self.bortle_msg = self.bortle_info(lat, lon)
                 except:
                     self.bortle_msg = ""
-                update.message.reply_photo(caption = self.weather_msg +"\n————————————\n", photo=moon_photo, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
+                update.message.reply_photo(caption = self.weather_msg, photo=moon_photo, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
             except:
                 update.message.reply_text(text="Error in retrieving data.")
@@ -325,9 +325,9 @@ class AstroBot():
                 return
                        
         try:    
-            weather_message, moon_photo = self.weather_data(lat, lon)
-            bortle_info = self.bortle_info(lat, lon)
-            update.message.reply_photo(caption = weather_message +"\n————————————\n"+ bortle_info, photo=moon_photo)
+            self.weather_msg, moon_photo = self.weather_data(lat, lon)
+            self.bortle_msg = self.bortle_info(lat, lon)
+            update.message.reply_photo(caption = self.weather_msg, photo=moon_photo)
             #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
         except:
             update.message.reply_text(text="Error in retrieving data.")
@@ -375,9 +375,9 @@ class AstroBot():
                         [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
             update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup(inline_kb), text='Show commands for:')
         elif update.callback_query.data == 'bortle_info':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Weather info", callback_data="weather_info")]]) ,text=self.bortle_msg)
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Weather info", callback_data="weather_info")]]) ,caption=self.bortle_msg)
         elif update.callback_query.data == 'weather_info':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle info", callback_data="bortle_info")]]) ,text=self.weather_msg)
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle info", callback_data="bortle_info")]]) ,caption=self.weather_msg)
 
     def books_alert(self, update, context):
         if(update.message.chat.type=='private'):
