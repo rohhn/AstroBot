@@ -18,6 +18,10 @@ f = open('new_dso.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
+f = open('sharpless_catalogue.json','r')
+sharpless_cat = json.load(f)
+f.close()
+
 class PhotoBot():
 
     def __init__(self):
@@ -196,7 +200,7 @@ class PhotoBot():
             search_object = update.message.text.lower().split('@hac_photobot tell me about')[1].strip()
             
             ignore_keys = ['object name', 'object type', 'constellation', 'deep_sky_image_link', 'visibility']
-            
+            cat = 1
             if re.search('m[ ]*[0-9]+', search_object.lower()):
                 search_object = re.sub('m[ ]*',"Messier ", search_object.lower())
             elif re.search('messier[0-9]+', search_object.lower()):
@@ -205,30 +209,57 @@ class PhotoBot():
                 search_object = re.sub('ngc',"NGC ", search_object.lower())
             elif re.search('ic[0-9]+', search_object.lower()):
                 search_object = re.sub('ic',"IC ", search_object.lower())
+            elif re.search('(sharpless) *2-', search_object.lower()):
+                search_object = re.sub('sharpless *2-', 'sh 2-', search_object.lower())
+                cat = 2
+            elif re.search('(sh) *2-', search_object.lower()):
+                search_object = re.sub('sh *2-', 'sh 2-', search_object.lower())
+                cat = 2
+            elif re.search('(sharpless) *(?!2-)', search_object.lower()):
+                search_object = re.sub('sharpless *', 'sh 2-', search_object.lower())
+                cat = 2
+            elif re.search('(sh) *(?!2-)', search_object.lower()):
+                search_object = re.sub('sh *', 'sh 2-', search_object.lower())
+                cat = 2
+            elif re.search('^sh ', search_object.lower()):
+                cat = 2
             print(search_object)
             try:
                 self.full_detail_msg = ""
                 self.dso_msg = ""
-                for t in deep_sky_info:
-                    for name in t['object name']:
-                        if name.lower() == search_object.lower().strip():
-                            found_object = [t]
-                if found_object:
-                    for x in found_object:
-                        img_link = x['deep_sky_image_link']
-                        try:
-                            names = '/'.join(x['object name'])
-                            self.dso_msg = str(names + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
-                        except:
-                            self.dso_msg = str(names+ ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
-                        keys = [key for key in x if key not in ignore_keys]
-                        for key in x:
-                            if key not in ignore_keys:
-                                self.full_detail_msg += '\n' + key + ': ' + x[key]
+                if cat ==1:
+                    for t in deep_sky_info:
+                        for name in t['object name']:
+                            if name.lower() == search_object.lower().strip():
+                                found_object = [t]
+                    if found_object:
+                        for x in found_object:
+                            img_link = x['deep_sky_image_link']
+                            try:
+                                names = '/'.join(x['object name'])
+                                self.dso_msg = str(names + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
+                            except:
+                                self.dso_msg = str(names+ ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
+                            
+                            for key in x:
+                                if key not in ignore_keys:
+                                    self.full_detail_msg += '\n' + key + ': ' + x[key]
+                            update.message.reply_photo(caption=self.dso_msg, photo = img_link, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Get detailed information', callback_data='full_dso_data')]]))
+                    else:
+                        msg = 'Object '+ search_object +' not found'
+                        update.message.reply_text(text=msg)
+                elif cat == 2:
+                    x = [f for f in sharpless_cat if f.lower()==search_object.lower()]
+                    if x:
+                        img_link = sharpless_cat[x[0]]['deep_sky_image_link']
+                        names = "/".join(sharpless_cat[x[0]]['alt_names'])
+                        if names:
+                            names = sharpless_cat[x[0]]['object name'] + '/' + names
+                        else:
+                            names = sharpless_cat[x[0]]['object name']
+                        self.dso_msg = str(names + ' - ' + sharpless_cat[x[0]]['short_description'])
+                        self.full_detail_msg = sharpless_cat[x[0]]['full_description']
                         update.message.reply_photo(caption=self.dso_msg, photo = img_link, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Get detailed information', callback_data='full_dso_data')]]))
-                else:
-                    msg = 'Object '+ search_object +' not found'
-                    update.message.reply_text(text=msg)
             except Exception as e:
                 msg = 'Object '+ search_object +' not found'
                 update.message.reply_text(text=msg)
@@ -256,6 +287,4 @@ class PhotoBot():
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back_dso_data")]]) ,caption=self.full_detail_msg)
         elif update.callback_query.data == 'back_dso_data':
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Get detailed information", callback_data="full_dso_data")]]) ,caption=self.dso_msg)
-
-
 

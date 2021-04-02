@@ -3,4 +3,7 @@ testing/
 .DS_Store
 .DS_Store/
 pyenv.cfg
-hac_bot/__pycache__/
+__pycache__/
+*.json
+test.py
+.ipynb_checkpoints/
