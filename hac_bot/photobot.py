@@ -14,11 +14,11 @@ import re
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('testing/new_dso.json','r')
+f = open('new_dso.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
-f = open('testing/sharpless_catalogue.json','r')
+f = open('sharpless_catalogue.json','r')
 sharpless_cat = json.load(f)
 f.close()
 
