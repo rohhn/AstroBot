@@ -22,6 +22,7 @@ f = open('sharpless_catalogue.json','r')
 sharpless_cat = json.load(f)
 f.close()
 
+
 f = open('abell_pn_catalogue.json','r')
 abell_cat = json.load(f)
 f.close()
