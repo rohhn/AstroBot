@@ -22,6 +22,11 @@ f = open('sharpless_catalogue.json','r')
 sharpless_cat = json.load(f)
 f.close()
 
+
+f = open('abell_pn_catalogue.json','r')
+abell_cat = json.load(f)
+f.close()
+
 class PhotoBot():
 
     def __init__(self):
@@ -223,6 +228,9 @@ class PhotoBot():
                 cat = 2
             elif re.search('^sh ', search_object.lower()):
                 cat = 2
+            elif re.search('^abell[ ]*[0-9]+', search_object.lower()):
+                cat = 3
+                search_object = re.sub('^abell[ ]*','abell ', search_object.lower())
             print(search_object)
             try:
                 self.full_detail_msg = ""
@@ -260,9 +268,23 @@ class PhotoBot():
                         self.dso_msg = str(names + ' - ' + sharpless_cat[x[0]]['short_description'])
                         self.full_detail_msg = sharpless_cat[x[0]]['full_description']
                         update.message.reply_photo(caption=self.dso_msg, photo = img_link, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Get detailed information', callback_data='full_dso_data')]]))
+                elif cat == 3:
+                    x = [f for f in abell_cat if f.lower()==search_object.lower()]
+                    if x:
+                        img_link = abell_cat[x[0]]['image_link']
+                        name = abell_cat[x[0]]['object name']
+                        description = abell_cat[x[0]]['description'].replace('PN', 'Planetary nebula')
+                        for v in description.split('\n'):
+                            if bool(v) & bool(re.search('^[0-9]',v)):
+                                v = '<i><u>' + v + '</u></i>'
+                            self.dso_msg = self.dso_msg + v + '\n'
+                        self.dso_msg = str('<b>'+name+'</b>\n' + self.dso_msg)
+                        html_message = f"<a href=\"{img_link}\">&#8204;</a>{str(self.dso_msg)}"
+                        update.message.reply_text(text=html_message, parse_mode='HTML')
             except Exception as e:
                 msg = 'Object '+ search_object +' not found'
                 update.message.reply_text(text=msg)
+                print(e)
         else:
             msg = 'No object entered.'
             update.message.reply_text(text=msg)
