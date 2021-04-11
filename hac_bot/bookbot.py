@@ -11,11 +11,11 @@ import time
 import sys
 from libgen_api import LibgenSearch
 ls = LibgenSearch()
-from hac_bot.astrobot import Helper
+from hac_bot.bot_helper import Helper
 
 class BookBot():
 	def __init__(self):
-		self.h = Helper()
+		self._helper = Helper()
 		return
 
 	def get_book_download_link(self,url):
@@ -77,4 +77,4 @@ class BookBot():
 
 	def help(self, update, context):
 		if update.message.chat.type == 'private':
-			context.bot.sendMessage(chat_id=update.message.chat_id, text=self.h.bookbot_help)
+			context.bot.sendMessage(chat_id=update.message.chat_id, text=self._helper.bookbot_help)

@@ -8,7 +8,7 @@ import re
 #main file
 
 def main():
-    AstroBot_Token = open('config/astrobot.conf','r').read()
+    AstroBot_Token = open('config/testbot.conf','r').read()
     PhotoBot_Token = open('config/photobot.conf', 'r').read()
     BookBot_Token = open('config/bookbot.conf','r').read()
 
@@ -16,27 +16,29 @@ def main():
     PhotoBot_Updater = Updater(PhotoBot_Token, use_context=True, workers= 32)
     BookBot_Updater = Updater(BookBot_Token, use_context=True, workers= 32)
 
+    #------------------------- AstroBot functions -------------------------
     astrobot = AstroBot()
     astrobot_dispatcher = AstroBot_Updater.dispatcher
     astrobot_dispatcher.add_handler(CommandHandler('start',astrobot.help))
-    astrobot_dispatcher.add_handler(CommandHandler('daily_articles',astrobot.get_article, pass_job_queue = True))
-    astrobot_dispatcher.add_handler(CommandHandler('stop_daily_articles',astrobot.stop_func, pass_job_queue = True))
-    astrobot_dispatcher.add_handler(CommandHandler('randomarticle',astrobot.random_article, run_async=True))
+    astrobot_dispatcher.add_handler(CommandHandler('daily_articles',astrobot.send_daily_article, pass_job_queue = True))
+    astrobot_dispatcher.add_handler(CommandHandler('stop_daily_articles',astrobot.stop_daily_article, pass_job_queue = True))
+    astrobot_dispatcher.add_handler(CommandHandler('randomarticle',astrobot.send_random_article, run_async=True))
     astrobot_dispatcher.add_handler(CommandHandler('help',astrobot.help, run_async=True))
-    astrobot_dispatcher.add_handler(CommandHandler('news', astrobot.fetch_article, pass_args=True, run_async= True))
-    astrobot_dispatcher.add_handler(InlineQueryHandler(astrobot.news_articles_inline, run_async= True))
-    astrobot_dispatcher.add_handler(CommandHandler('wiki',astrobot.get_wiki_info, pass_args=True))
-    astrobot_dispatcher.add_handler(CommandHandler('weather',astrobot.get_weather, pass_args=True, run_async= True))
-    astrobot_dispatcher.add_handler(MessageHandler(Filters.location, astrobot.current_location_weather, run_async= True))
+    astrobot_dispatcher.add_handler(CommandHandler('news', astrobot.send_news_article, pass_args=True, run_async= True))
+    astrobot_dispatcher.add_handler(InlineQueryHandler(astrobot.send_inline_news, run_async= True))
+    astrobot_dispatcher.add_handler(CommandHandler('wiki',astrobot.send_wiki_info, pass_args=True))
+    astrobot_dispatcher.add_handler(CommandHandler('weather',astrobot.send_weather_data, pass_args=True, run_async= True))
+    astrobot_dispatcher.add_handler(MessageHandler(Filters.location, astrobot.send_current_location_weather, run_async= True))
     astrobot_dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, astrobot.welcome_new_user))
     astrobot_dispatcher.add_handler(CommandHandler('book', astrobot.books_alert, pass_args=True))
     astrobot_dispatcher.add_handler(CallbackQueryHandler(astrobot.callback_query_handler, pass_chat_data=True, pass_user_data= True))
     AstroBot_Updater.start_polling()
 
+    #------------------------- PhotoBot functions -------------------------
     photobot = PhotoBot()
     photobot_dispatcher = PhotoBot_Updater.dispatcher
-    photobot_dispatcher.add_handler(CommandHandler('startapod', photobot.daily_job, pass_job_queue=True))
-    photobot_dispatcher.add_handler(CommandHandler('stopapod', photobot.stop_func, pass_job_queue=True))
+    photobot_dispatcher.add_handler(CommandHandler('startapod', photobot.send_apod, pass_job_queue=True))
+    photobot_dispatcher.add_handler(CommandHandler('stopapod', photobot.stop_apod, pass_job_queue=True))
     photobot_dispatcher.add_handler(CommandHandler('start',photobot.help))
     photobot_dispatcher.add_handler(CommandHandler('help',photobot.help))
     astrometry_handler  = ConversationHandler(entry_points = [CommandHandler('analyze',photobot.start_platesolve, run_async=True),CommandHandler('analyse',photobot.start_platesolve, run_async=True)],
@@ -50,10 +52,10 @@ def main():
                                     )
     photobot_dispatcher.add_handler(astrometry_handler)
     photobot_dispatcher.add_handler(CallbackQueryHandler(photobot.callback_query_handler, pass_chat_data=True))
-    #photobot_dispatcher.add_handler(MessageHandler(Filters.regex(r'@HAC_PhotoBot tell me about|@HAC_PhotoBot Tell me about'), photobot.get_dso_data, run_async=True))
     photobot_dispatcher.add_handler(MessageHandler(Filters.regex(re.compile(r'@HAC_PhotoBot tell me about', re.IGNORECASE)), photobot.get_dso_data, run_async=True))
     PhotoBot_Updater.start_polling()
 
+    #------------------------- BookBot functions -------------------------
     bookbot = BookBot()
     bookbot_dispatcher = BookBot_Updater.dispatcher
     bookbot_dispatcher.add_handler(InlineQueryHandler(bookbot.send_book, run_async= True))

@@ -2,8 +2,9 @@ config/
 testing/
 .DS_Store
 .DS_Store/
-pyenv.cfg
+*.cfg
 __pycache__/
 *.json
 test.py
 .ipynb_checkpoints/
+*.pyc

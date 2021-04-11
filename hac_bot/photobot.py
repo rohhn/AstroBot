@@ -8,29 +8,29 @@ import pytz
 import time
 import json
 from hac_bot.astrometry import Astrometry
-from hac_bot.astrobot import Helper
+from hac_bot.bot_helper import Helper
 import re
 
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('new_dso.json','r')
+f = open('testing/new_dso.json','r')
 deep_sky_info = json.load(f)
 f.close()
 
-f = open('sharpless_catalogue.json','r')
+f = open('testing/sharpless_catalogue.json','r')
 sharpless_cat = json.load(f)
 f.close()
 
 
-f = open('abell_pn_catalogue.json','r')
+f = open('testing/abell_pn_catalogue.json','r')
 abell_cat = json.load(f)
 f.close()
 
 class PhotoBot():
 
     def __init__(self):
-        self.h = Helper()
+        self._helper = Helper()
         self.astrometry = Astrometry()
         return
 
@@ -52,9 +52,9 @@ class PhotoBot():
             context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
         
     
-    def daily_job(self, update, context):
+    def send_apod(self, update, context):
 
-        job_removed= self.h.remove_job(str(update.message.chat_id), context)
+        job_removed= self._helper.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
             context.bot.delete_message(update.message.chat_id, r.message_id)
@@ -63,14 +63,14 @@ class PhotoBot():
         context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id, name=str(update.message.chat_id))
 
    
-    def stop_func(self, update, context):
-        job_removed = self.h.remove_job(str(update.message.chat_id), context)
+    def stop_apod(self, update, context):
+        job_removed = self._helper.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
 
 # ------------------------------------ PLATESOLVE IMAGES -------------------------------------#
 
-    def check_job_status(self, jobid, count):
+    def astrometry_check_job_status(self, jobid, count):
         if count <11:
             time.sleep(15)
             job_status = self.astrometry.get_job_status(jobid)
@@ -79,7 +79,7 @@ class PhotoBot():
             elif job_status['status'] == 'failure':
                 return False
             else:
-                return(self.check_job_status(jobid,count+1))
+                return(self.astrometry_check_job_status(jobid,count+1))
         else:
             return False
 
@@ -120,7 +120,7 @@ class PhotoBot():
                 submission_status = self.astrometry.get_submission_status(upload_status['subid'])
                 jobid = submission_status['jobs'][0]
                 bot_msg.edit_text( text="Analyzing...")
-                if self.check_job_status(jobid,1):
+                if self.astrometry_check_job_status(jobid,1):
                     final_image = self.astrometry.get_final_image(jobid)
                     
                     bot_msg.edit_text( text="Final image ready.")
@@ -295,7 +295,7 @@ class PhotoBot():
     def help(self, update, context):
         #new help
         if update.message.chat.type == 'private':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text=self.h.photobot_help + "\n\n/startapod - Receive daily Astronomy Picture of the Day from NASA.\n\n/stopapod - Stop receiving APOD.")
+            context.bot.sendMessage(chat_id=update.message.chat_id, text=self._helper.photobot_help + "\n\n/startapod - Receive daily Astronomy Picture of the Day from NASA.\n\n/stopapod - Stop receiving APOD.")
 
 
     def callback_query_handler(self, update, context):

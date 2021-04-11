@@ -11,65 +11,14 @@ import time
 import sys
 from libgen_api import LibgenSearch
 ls = LibgenSearch()
-
-
+from hac_bot.bot_helper import Helper
 
 ind_tz = pytz.timezone('Asia/Kolkata')
-
-class Helper():
-
-    def __init__(self):
-        self.astrobot_help = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/help - Display all bot commands."
-        self.photobot_help = "Commands for @HAC_PhotoBot:\n\n/analyze or /analyse - Plate-solve an astronomy image.\n\nAsk the bot information about any DSO by typing \"@HAC_PhotoBot tell me about <DSO Name>\""
-        self.bookbot_help = "Commands for @LibgenLibrary_Bot:\n\n/book <bookname> - Search for the book title on Library Genesis."
-        #Commands for @HAC_PhotoBot:\n\n/
-
-    def remove_job(self, name, context):
-        cur_jobs = context.job_queue.get_jobs_by_name(name)
-        if not cur_jobs:
-            return False
-        for job in cur_jobs:
-            job.schedule_removal()
-        return True
-
-    def scrape(self, url):
-        page  = requests.get(url) 
-        page_text = bs4(page.text,'html.parser') # parse google news page to find all articles
-        articles_text = page_text.find_all(class_ = "ZINbbc xpd O9g5cc uUPGi")
-        return articles_text #return list of all articles
-
-    def get_article_url(self, url):
-        url = url.find('a').attrs['href'].replace('/url?q=','').split('&sa')[0]
-        return url
-
-    def get_time(self, i): 
-        posted_time = i.find(class_ = "r0bn4c rQMQod").contents[0]
-        posted_time = posted_time.split(" ")
-        if (posted_time[1] == 'mins' or posted_time[1] == 'min'):
-            time_since = int(posted_time[0])
-        if (posted_time[1] == 'hours' or posted_time[1] == 'hour'):
-            time_since = 60 * int(posted_time[0])
-        elif (posted_time[1] == 'days' or posted_time[1] == 'day'):
-            time_since = 24*60 * int(posted_time[0])
-        elif (posted_time[1] == 'weeks' or posted_time[1] == 'week'):
-            time_since = 7*24*60* int(posted_time[0])
-        else:
-            time_since = 9999999
-        return(time_since) #return time since posted
-
-    def get_coordintes(self, search_text):
-        geolocation_url = "https://dev.virtualearth.net/REST/v1/Locations?key=Al3NnfvA47J04pxm1b6YfknCea0TYqx4TuzYQJ_EnCXTb5N8ZLMwPtrB631UHiJJ&o=json&q="+search_text+"&jsonso="+search_text
-        geolocation_response = (requests.get(geolocation_url)).json()
-        lat = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][0],2)
-        lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1],2)
-        return lat, lon
-
 
 class AstroBot():
 
     def __init__(self):
-        self.h = Helper()
-
+        self._helper = Helper()
 
 # ------------------- GENERATE RANDOM ARTICLES FROM POOL OF TOPICS ----------------------#
 
@@ -79,16 +28,16 @@ class AstroBot():
 
         keyword = random_topics[random.randint(0,len(random_topics)-1)]
         url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
-        articles_text = self.h.scrape(url)
+        articles_text = self._helper.scrape(url)
         data = []
         for i in articles_text:
-            data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+            data.append([self._helper.get_article_url(i),self._helper.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
 
         return(data[random.randrange(0,len(articles_text),1)][0])
 
     
-    #BOT CALLED FUNCTION
-    def random_article(self, update, context):
+    # /randomarticle
+    def send_random_article(self, update, context):
         try:
             update.message.reply_text(self.get_random_article())
         except:
@@ -99,7 +48,7 @@ class AstroBot():
 
 # ----------------------------------- DAILY ARTICLES -------------------------------------- #
 
-    def send_article(self, context):
+    def get_daily_article(self, context):
         weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','space+observations']
         day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
         if day == 'Friday':
@@ -110,30 +59,32 @@ class AstroBot():
         url = "https://www.google.com/search?q="+topic_day+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
         #articles_text = scrape(url)
         data = []
-        for i in self.h.scrape(url):
-            data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+        for i in self._helper.scrape(url):
+            data.append([self._helper.get_article_url(i),self._helper.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
         data = sorted(data, key = lambda x:x[1])
         context.bot.sendMessage(chat_id = context.job.context,text = (data[0][0]))
 
-    def get_article(self, update,context):
-        job_removed= self.h.remove_job(str(update.message.chat_id), context)
+    # /daily_articles
+    def send_daily_article(self, update,context):
+        job_removed= self._helper.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
             context.bot.delete_message(update.message.chat_id, r.message_id)
             
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles related to astronomy will be everyday.\n\n Clear Skies!")
-        context.job_queue.run_daily(self.send_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id, name=str(update.message.chat_id))
-        
-    def stop_func(self, update, context):
-        job_removed = self.h.remove_job(str(update.message.chat_id), context)
+        context.job_queue.run_daily(self.get_daily_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id, name=str(update.message.chat_id))
+  
+    # /stop_daily_articles    
+    def stop_daily_article(self, update, context):
+        job_removed = self._helper.remove_job(str(update.message.chat_id), context)
         if(job_removed):
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='Daily articles have been stopped')
+            context.bot.sendMessage(chat_id=update.message.chat_id, text='Daily articles have been stopped.')
 
 # ----------------------------------------------------------------------------------------#
 
-# ----------------------- FETCH LATEST ARTICLE BASED ON KEYWORDS BY USER --------------------------- #
+# ----------------------- FETCH NEWS ARTICLES BASED ON KEYWORDS BY USER --------------------------- #
 
-    def get_keyword_articles(self, keyword):
+    def get_news_articles_by_keyword(self, keyword):
         if(profanity.contains_profanity(keyword)):
             return False
         elif(keyword==""):
@@ -142,39 +93,18 @@ class AstroBot():
             try:
                 url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
                 data = []
-                for i in self.h.scrape(url):
-                    data.append([self.h.get_article_url(i),self.h.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
-                #data = sorted(data, key = lambda x:x[1])
-                return(data) #calls function from weekly articles generator
+                for i in self._helper.scrape(url):
+                    data.append([self._helper.get_article_url(i),self._helper.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+                return(data)
             except:
                 return False
-
-
-    ''' COMMAND /news FOR ASTROBOT '''
-    def fetch_article(self, update, context):
-        search_text=""
-        for i in context.args:
-            search_text = search_text + " " +i
-        try:
-            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
-            kb = InlineKeyboardMarkup(kb_list)
-            self.x= update.message.reply_text(text=search_text.strip(), reply_markup = kb)
-        except:
-            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
-            kb = InlineKeyboardMarkup(kb_list)
-            self.x= update.message.reply_text(text='Click the button to search', reply_markup = kb)
-            #time.sleep(10)
-            #context.bot.delete_message(chat_id=x.chat.id, message_id = x.message_id)
-
         
-    def news_articles_inline(self, update, context):
+    def send_inline_news(self, update, context):
         query = update.inline_query.query
         results = list()
         if not query:
             return
-        #print(query)
-        #print('_'*40)
-        data = self.get_keyword_articles(query)
+        data = self.get_news_articles_by_keyword(query)
         if data:
             for i in range(len(data)):
                 results.append(
@@ -192,9 +122,21 @@ class AstroBot():
                     input_message_content= InputTextMessageContent(message_text="No results found")))
 
         context.bot.answer_inline_query(update.inline_query.id, results)
-        #self.delete_request_message()
-        #time.sleep(10)
         context.bot.delete_message(chat_id=self.x.chat.id, message_id = self.x.message_id)
+
+    # /news
+    def send_news_article(self, update, context):
+        search_text=""
+        for i in context.args:
+            search_text = search_text + " " +i
+        try:
+            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat=search_text.strip())]]
+            kb = InlineKeyboardMarkup(kb_list)
+            self.x= update.message.reply_text(text=search_text.strip(), reply_markup = kb)
+        except:
+            kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
+            kb = InlineKeyboardMarkup(kb_list)
+            self.x= update.message.reply_text(text='Click the button to search', reply_markup = kb)
 
 # ----------------------------------------------------------------------------------------------#
 
@@ -211,7 +153,7 @@ class AstroBot():
         else:
             return("Cannot find Wikipedia link.")
     
-    def scrape_wiki(self, search_text):
+    def get_wiki_summary(self, search_text):
         if(profanity.contains_profanity(search_text)):
             return("censored.")
         elif(search_text == '+site:wikipedia.org'):
@@ -234,12 +176,12 @@ class AstroBot():
                 return("Cannot find Wikipedia page.")
                 
     
-    def get_wiki_info(self, update, context):
+    def send_wiki_info(self, update, context):
         search_text=""
         for i in context.args:
             search_text = search_text + " " +i
         search_text += "+site:wikipedia.org"
-        update.message.reply_text(self.scrape_wiki(search_text.lower()))
+        update.message.reply_text(self.get_wiki_summary(search_text.lower()))
 
 # ----------------------------------------------------------------------------------------------#
 
@@ -254,7 +196,7 @@ class AstroBot():
         moon_phase = td_response.findAll('section',{'class':'bk-focus'})[0].find('a').text
         return moon_image, moon_percent, moon_phase
 
-    def bortle_info(self, lat, lon):
+    def get_bortle_info(self, lat, lon):
         url = "https://clearoutside.com/forecast/"+str(lat)+"/"+str(lon)
         #bortle = bs4(requests.get(url).text, 'html.parser')
         info = []
@@ -264,7 +206,7 @@ class AstroBot():
         return bortle_info
 
 
-    def weather_data(self, lat, lon):
+    def get_weather_data(self, lat, lon):
         
         openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely&units=metric"+"&appid=90701b1aba6e661af014c16e653b91c3"
         openweather_response = (requests.get(openweather_url)).json()
@@ -282,14 +224,14 @@ class AstroBot():
         weather_message = "\nStatus: "+description+"\nCloud Cover: "+str(cloud_cover)+"%\nWind Speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\n————————————\nMoon Illumination: "+moon_percent+"\nMoon Phase: "+moon_phase
         return weather_message, moon_image
 
-    def current_location_weather(self, update, context):
+    def send_current_location_weather(self, update, context):
         try:
             lat = update.message.location.latitude
             lon = update.message.location.longitude           
             try:    
-                self.weather_msg, moon_photo = self.weather_data(lat, lon)
+                self.weather_msg, moon_photo = self.get_weather_data(lat, lon)
                 try:
-                    self.bortle_msg = self.bortle_info(lat, lon)
+                    self.bortle_msg = self.get_bortle_info(lat, lon)
                 except:
                     self.bortle_msg = ""
                 update.message.reply_photo(caption = self.weather_msg, photo=moon_photo, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
@@ -301,7 +243,7 @@ class AstroBot():
             context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 303 - current_location_weather):\n" + str(e))
 
 
-    def get_weather(self, update, context):
+    def send_weather_data(self, update, context):
         search_text=""
         for i in context.args:
             search_text += i + ' '
@@ -310,7 +252,6 @@ class AstroBot():
             lat, lon = search_text.replace(' ','').split(',')
         elif (search_text==''):
             if(update.message.chat.type == 'private'):     
-                #context.bot.sendMessage(chat_id=update.message.chat_id, text='Please include a location.')
                 kb_list = [[KeyboardButton(text='Send Current Location', request_location=True)]]
                 kb = ReplyKeyboardMarkup(kb_list, one_time_keyboard= True)
                 update.message.reply_text(text="Please include a location or click the button to send current location.", reply_markup = kb)
@@ -319,16 +260,15 @@ class AstroBot():
             return
         else:
             try:
-                lat, lon = self.h.get_coordintes(search_text)
+                lat, lon = self._helper.get_coordintes(search_text)
             except:
                 update.message.reply_text(text='Invalid location.')
                 return
                        
         try:    
-            self.weather_msg, moon_photo = self.weather_data(lat, lon)
-            self.bortle_msg = self.bortle_info(lat, lon)
-            update.message.reply_photo(caption = self.weather_msg, photo=moon_photo)
-            #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
+            self.weather_msg, moon_photo = self.get_weather_data(lat, lon)
+            self.bortle_msg = self.get_bortle_info(lat, lon)
+            update.message.reply_photo(caption = self.weather_msg, photo=moon_photo,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
         except:
             update.message.reply_text(text="Error in retrieving data.")
             context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
@@ -353,7 +293,7 @@ class AstroBot():
     def help(self, update, context):
         #new help
         if update.message.chat.type == 'private':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text= self.h.astrobot_help)
+            context.bot.sendMessage(chat_id=update.message.chat_id, text= self._helper.astrobot_help)
         else:
             inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
                         [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
@@ -364,20 +304,20 @@ class AstroBot():
     def callback_query_handler(self, update, context):
 
         if update.callback_query.data == 'astrobot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.astrobot_help)
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self._helper.astrobot_help)
         elif update.callback_query.data == 'photobot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.photobot_help)
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self._helper.photobot_help)
         elif update.callback_query.data == 'bookbot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self.h.bookbot_help)
+            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self._helper.bookbot_help)
         elif update.callback_query.data == 'menu':
             inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
                         [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
                         [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
             update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup(inline_kb), text='Show commands for:')
         elif update.callback_query.data == 'bortle_info':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Weather info", callback_data="weather_info")]]) ,caption=self.bortle_msg)
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Weather Data", callback_data="weather_info")]]) ,caption=self.bortle_msg)
         elif update.callback_query.data == 'weather_info':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle info", callback_data="bortle_info")]]) ,caption=self.weather_msg)
+            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle Data", callback_data="bortle_info")]]) ,caption=self.weather_msg)
 
     def books_alert(self, update, context):
         if(update.message.chat.type=='private'):
