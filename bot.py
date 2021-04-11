@@ -8,7 +8,7 @@ import re
 #main file
 
 def main():
-    AstroBot_Token = open('config/testbot.conf','r').read()
+    AstroBot_Token = open('config/astrobot.conf','r').read()
     PhotoBot_Token = open('config/photobot.conf', 'r').read()
     BookBot_Token = open('config/bookbot.conf','r').read()
 
