@@ -42,7 +42,7 @@ class AstroBot():
             update.message.reply_text(self.get_random_article())
         except:
             update.message.reply_text("Error in retrieving data.")
-            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(random_article):\n" + str(sys.exc_info()))
+            context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(random_article):\n" + str(sys.exc_info()))
 
 # ----------------------------------------------------------------------------------------#
 
@@ -238,9 +238,9 @@ class AstroBot():
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
             except:
                 update.message.reply_text(text="Error in retrieving data.")
-                context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 301 - current_location_weather):\n" + str(sys.exc_info()))
+                context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 301 - current_location_weather):\n" + str(sys.exc_info()))
         except Exception as e:
-            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 303 - current_location_weather):\n" + str(e))
+            context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 303 - current_location_weather):\n" + str(e))
 
 
     def send_weather_data(self, update, context):
@@ -271,7 +271,7 @@ class AstroBot():
             update.message.reply_photo(caption = self.weather_msg, photo=moon_photo,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
         except:
             update.message.reply_text(text="Error in retrieving data.")
-            context.bot.sendMessage(chat_id="-1001331038106", text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
+            context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
 
 
 # ------------------------------------ WELCOME NEW MEMBERS -------------------------------------#

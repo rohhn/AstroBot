@@ -9,21 +9,30 @@ import time
 import json
 from hac_bot.astrometry import Astrometry
 from hac_bot.bot_helper import Helper
-import re
+import re, os
 
 
 indt = pytz.timezone("Asia/Kolkata")
 
-f = open('new_dso.json','r')
+if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
+    ngc_messier_data = 'testing/new_dso.json'
+    sharpless_data = 'testing/sharpless_catalogue.json'
+    abell_data = 'testing/abell_pn_catalogue.json'
+elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
+    ngc_messier_data = 'new_dso.json'
+    sharpless_data = 'sharpless_catalogue.json'
+    abell_data = 'abell_pn_catalogue.json'
+
+f = open(ngc_messier_data,'r')
 deep_sky_info = json.load(f)
 f.close()
 
-f = open('sharpless_catalogue.json','r')
+f = open(sharpless_data,'r')
 sharpless_cat = json.load(f)
 f.close()
 
 
-f = open('abell_pn_catalogue.json','r')
+f = open(abell_data,'r')
 abell_cat = json.load(f)
 f.close()
 
@@ -39,16 +48,16 @@ class PhotoBot():
     def get_apod(self, context):
 
         #API call
-        url   = "https://api.nasa.gov/planetary/apod?api_key={}".format(open('config/apod_key.conf','r').read())
+        url   = f"https://api.nasa.gov/planetary/apod?api_key={os.environ['APOD_KEY']}"
         resp  = requests.get(url).json()
         url   = resp['url']
         date  = "Date: " + str(resp['date'])
         title = "APOD - " + resp['title']
         explanation = resp['explanation']
         try:
-            context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str(title+"\n\n"+explanation+"\n" + date))
+            context.bot.sendPhoto(chat_id=context.job.context, photo=url, caption = str(f"{title}\n\n{explanation}\n{date}"))
         except:
-            message = ("<a href=\""+url+"\"><b>" + title + "</b></a>\n\n" +"\n" +explanation+"\n<i>"+date+"</i>\n")
+            message = (f"<a href=\"{url}\"><b>{title}</b></a>\n\n\n{explanation}\n<i>{date}</i>\n")
             context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
         
     
@@ -175,23 +184,19 @@ class PhotoBot():
         return -1 
 
     def start_platesolve(self, update, context):
-        if update.message.chat.type == 'private' or str(update.message.chat_id) == str(open('config/test_chat.conf','r').read()):
-            try:
-                self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':open('config/astrometry_key.conf','r').read()})})
-                if self.login_data['status'] == 'success':
-                    self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
-                    return 1
-                else:
-                    context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
-                    return -1
-            except ConnectionError:
-                self.req_msg = update.message.reply_text(text='Connection error. Please try again.')
+        try:
+            self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':os.environ['ASTROMETRY_KEY']})})
+            if self.login_data['status'] == 'success':
+                self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
+                return 1
+            else:
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
                 return -1
-            except:
-                self.req_msg = update.message.reply_text(text='Systems down. Please report the error to the admins.')
-                return -1
-        else:
-            self.req_msg = update.message.reply_text(text='This feature is only available in private chat with @HAC_PhotoBot')
+        except ConnectionError:
+            self.req_msg = update.message.reply_text(text='Connection error. Please try again.')
+            return -1
+        except:
+            self.req_msg = update.message.reply_text(text='Systems down. Please report the error to the admins.')
             return -1
 
     def cancel(self, update, context):

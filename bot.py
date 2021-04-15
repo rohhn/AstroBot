@@ -3,18 +3,28 @@ from hac_bot.astrobot import AstroBot
 from hac_bot.photobot import PhotoBot
 from hac_bot.bookbot import BookBot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
-import re
+import re, os
 
 #main file
 
 def main():
-    AstroBot_Token = open('config/astrobot.conf','r').read()
-    PhotoBot_Token = open('config/photobot.conf', 'r').read()
-    BookBot_Token = open('config/bookbot.conf','r').read()
+
+    if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
+        #AstroBot_Token = open('config/testbot.conf','r').read()
+        PhotoBot_Token = open('config/testbot.conf', 'r').read()
+        #BookBot_Token = open('config/testbot.conf','r').read()
+    elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
+        AstroBot_Token = os.environ['ASTROBOT_TOKEN']
+        PhotoBot_Token = os.environ['PHOTOBOT_TOKEN']
+        BookBot_Token = os.environ['BOOKBOT_TOKEN']
+    else:
+        print("Development Environment not known. Check Environment variable - DEPLOYMENT_ENVIRONMENT")
+        return
 
     AstroBot_Updater = Updater(AstroBot_Token, use_context= True, workers= 32)
     PhotoBot_Updater = Updater(PhotoBot_Token, use_context=True, workers= 32)
     BookBot_Updater = Updater(BookBot_Token, use_context=True, workers= 32)
+
 
     #------------------------- AstroBot functions -------------------------
     astrobot = AstroBot()
