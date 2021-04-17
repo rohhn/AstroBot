@@ -10,8 +10,8 @@ import re, os
 def main():
 
     if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
-        #AstroBot_Token = open('config/testbot.conf','r').read()
-        PhotoBot_Token = open('config/testbot.conf', 'r').read()
+        AstroBot_Token = open('config/testbot.conf','r').read()
+        #PhotoBot_Token = open('config/testbot.conf', 'r').read()
         #BookBot_Token = open('config/testbot.conf','r').read()
     elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
         AstroBot_Token = os.environ['ASTROBOT_TOKEN']

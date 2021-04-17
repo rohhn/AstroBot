@@ -12,6 +12,13 @@ import sys
 from libgen_api import LibgenSearch
 ls = LibgenSearch()
 from hac_bot.bot_helper import Helper
+import os
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--no-sandbox')
+from PIL import Image
 
 ind_tz = pytz.timezone('Asia/Kolkata')
 
@@ -205,6 +212,40 @@ class AstroBot():
         bortle_info = "Bortle " + info[1] + "\nSQM: " + info[0] + "\nArtificial Brightness: " + info[3] + "μcd/m2"
         return bortle_info
 
+    def get_lp_img(self, lat, lon):
+        try:
+            if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
+                chromedriver_path = '/Users/rohan/Desktop/projects/bot_env/bin/chromedriver'
+            elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
+                chromedriver_path = '/var/lib/chromedriver'
+            else:
+                print("Development Environment not known. Check Environment variable - DEPLOYMENT_ENVIRONMENT")
+                return
+            driver = webdriver.Chrome(chromedriver_path, options=chrome_options)
+            driver.set_window_size(800,800)
+            driver.get(f'https://www.lightpollutionmap.info/#zoom=10&lat={lat}&lon={lon}&layers=B0FFFFFFTFFFFFFFFFF')
+            driver.implicitly_wait(10)
+            driver.find_element_by_id('CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll').click()
+            time.sleep(2)
+            driver.find_element_by_id('rightMenuButton').click()
+            #input_form = driver.find_element_by_id('searchBox')
+            driver.find_element_by_id('searchBox').send_keys(f"{lat},{lon}")
+            #input_form.send_keys(Keys.RETURN)
+            time.sleep(3)
+            driver.find_element_by_class_name('ui-menu-item-wrapper').click()
+            time.sleep(3)
+            map = driver.find_element_by_id('map')
+            map.screenshot('map.png')
+            size = map.size
+            driver.close()
+            img = Image.open('map.png')
+            img = img.crop((0,100, size['width']-50,size['height']-100))
+            img.save('map.png')
+            return 1
+        except:
+            print(sys.exc_info())
+            return 0
+
 
     def get_weather_data(self, lat, lon):
         
@@ -229,12 +270,16 @@ class AstroBot():
             lat = update.message.location.latitude
             lon = update.message.location.longitude           
             try:    
-                self.weather_msg, moon_photo = self.get_weather_data(lat, lon)
+                self.weather_msg, self.moon_photo = self.get_weather_data(lat, lon)
                 try:
                     self.bortle_msg = self.get_bortle_info(lat, lon)
                 except:
                     self.bortle_msg = ""
-                update.message.reply_photo(caption = self.weather_msg, photo=moon_photo, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
+                if self.get_lp_img(lat, lon) == 1:
+                    self.lp_img = open('map.png', 'rb')
+                else:
+                    self.lp_img = self.moon_photo
+                update.message.reply_photo(caption = self.weather_msg, photo=self.lp_img, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
                 #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
             except:
                 update.message.reply_text(text="Error in retrieving data.")
@@ -266,9 +311,13 @@ class AstroBot():
                 return
                        
         try:    
-            self.weather_msg, moon_photo = self.get_weather_data(lat, lon)
+            self.weather_msg, self.moon_photo = self.get_weather_data(lat, lon)
             self.bortle_msg = self.get_bortle_info(lat, lon)
-            update.message.reply_photo(caption = self.weather_msg, photo=moon_photo,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
+            if self.get_lp_img(lat, lon) == 1:
+                self.lp_img = open('map.png', 'rb')
+            else:
+                self.lp_img = self.moon_photo
+            update.message.reply_photo(caption = self.weather_msg, photo=self.lp_img,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
         except:
             update.message.reply_text(text="Error in retrieving data.")
             context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
