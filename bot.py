@@ -41,6 +41,7 @@ def main():
     astrobot_dispatcher.add_handler(MessageHandler(Filters.location, astrobot.send_current_location_weather, run_async= True))
     astrobot_dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, astrobot.welcome_new_user))
     astrobot_dispatcher.add_handler(CommandHandler('book', astrobot.books_alert, pass_args=True))
+    astrobot_dispatcher.add_handler(CommandHandler('rules', astrobot.hac_rules))
     astrobot_dispatcher.add_handler(CallbackQueryHandler(astrobot.callback_query_handler, pass_chat_data=True, pass_user_data= True))
     AstroBot_Updater.start_polling()
 

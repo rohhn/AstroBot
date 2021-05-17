@@ -22,6 +22,17 @@ from PIL import Image
 
 ind_tz = pytz.timezone('Asia/Kolkata')
 
+if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
+    chromedriver_path = '/Users/rohan/Desktop/projects/bot_env/bin/chromedriver'
+    openweather_key = open('config/openweather_key.conf','r').read()
+elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
+    chromedriver_path = '/var/lib/chromedriver'
+    openweather_key = os.environ['OPENWEATHER_KEY']
+else:
+    print("Development Environment not known. Check Environment variable - DEPLOYMENT_ENVIRONMENT")
+    exit()
+
+
 class AstroBot():
 
     def __init__(self):
@@ -249,7 +260,7 @@ class AstroBot():
 
     def get_weather_data(self, lat, lon):
         
-        openweather_url = "https://api.openweathermap.org/data/2.5/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely&units=metric"+"&appid=90701b1aba6e661af014c16e653b91c3"
+        openweather_url = f"https://api.openweathermap.org/data/2.5/onecall?lat={str(lat)}&lon={str(lon)}&exclude=minutely&units=metric&appid={openweather_key}"
         openweather_response = (requests.get(openweather_url)).json()
         
         sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).astimezone(ind_tz).time()
@@ -373,5 +384,15 @@ class AstroBot():
             text = "Please use @LibgenLibrary_Bot to search books"
             update.message.reply_text(text)
 
+    def hac_rules(self, update, context):
+        if update.message.chat_id == os.environ['HAC_CHAT']:
+            rules = """1. No spam/forward from other groups.\n
+                       2. Keep the discussion in the realm of Astronomy and related sciences.\n
+                       3. NSFW content will lead to a permanent ban.\n
+                       4. Do not message members of the group privately without cause/consent.\n\n\n
+                       If any rule is breached, a warning will be issued and a second breach will result in a permanent ban.
+                       """
+            context.bot.sendMessage(chat_id= update.message.chat_id, text= rules)
+    
 
     
