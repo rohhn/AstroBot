@@ -385,14 +385,10 @@ class AstroBot():
             update.message.reply_text(text)
 
     def hac_rules(self, update, context):
-        if update.message.chat_id == os.environ['HAC_CHAT']:
-            rules = """1. No spam/forward from other groups.\n
-                       2. Keep the discussion in the realm of Astronomy and related sciences.\n
-                       3. NSFW content will lead to a permanent ban.\n
-                       4. Do not message members of the group privately without cause/consent.\n\n\n
-                       If any rule is breached, a warning will be issued and a second breach will result in a permanent ban.
-                       """
-            context.bot.sendMessage(chat_id= update.message.chat_id, text= rules)
+        if str(update.message.chat_id) == os.environ['HAC_CHAT']:
+            rules = """1. No spam/forward from other groups.\n2. Keep the discussion in the realm of Astronomy and related sciences.\n3. NSFW content will lead to a permanent ban.\n4. Do not message members of the group privately without cause/consent.\n\nIf any rule is breached, a warning will be issued and a second breach will result in a permanent ban.\n\n\nClear skies!"""
+            update.message.reply_text(text = rules)
+
     
 
     
