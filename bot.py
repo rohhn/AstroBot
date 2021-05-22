@@ -3,16 +3,24 @@ from hac_bot.astrobot import AstroBot
 from hac_bot.photobot import PhotoBot
 from hac_bot.bookbot import BookBot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
-import re, os
+import re, os, sys
 
 #main file
 
 def main():
 
     if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
-        AstroBot_Token = open('config/testbot.conf','r').read()
-        #PhotoBot_Token = open('config/testbot.conf', 'r').read()
-        #BookBot_Token = open('config/testbot.conf','r').read()
+        try:
+            if sys.argv[1] == 'astrobot':
+                AstroBot_Token = open('config/testbot.conf','r').read()
+            elif sys.argv[1] == 'photobot':
+                PhotoBot_Token = open('config/testbot.conf', 'r').read()
+            elif sys.argv[1] == 'bookbot':
+                BookBot_Token = open('config/testbot.conf','r').read()
+        except:
+            print("Enter which bot to test.")
+            sys.exit(1)
+        
     elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
         AstroBot_Token = os.environ['ASTROBOT_TOKEN']
         PhotoBot_Token = os.environ['PHOTOBOT_TOKEN']
@@ -39,7 +47,7 @@ def main():
     astrobot_dispatcher.add_handler(CommandHandler('wiki',astrobot.send_wiki_info, pass_args=True))
     astrobot_dispatcher.add_handler(CommandHandler('weather',astrobot.send_weather_data, pass_args=True, run_async= True))
     astrobot_dispatcher.add_handler(MessageHandler(Filters.location, astrobot.send_current_location_weather, run_async= True))
-    astrobot_dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, astrobot.welcome_new_user))
+    astrobot_dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, astrobot.welcome_new_user, run_async=True))
     astrobot_dispatcher.add_handler(CommandHandler('book', astrobot.books_alert, pass_args=True))
     astrobot_dispatcher.add_handler(CommandHandler('rules', astrobot.hac_rules))
     astrobot_dispatcher.add_handler(CallbackQueryHandler(astrobot.callback_query_handler, pass_chat_data=True, pass_user_data= True))

@@ -1,18 +1,11 @@
+import re, os, sys, random, time, pytz, requests
 from bs4 import BeautifulSoup as bs4
-import requests
-from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 import datetime
-import random
-import re
 from better_profanity import profanity
-import pytz
-import time
-import sys
 from libgen_api import LibgenSearch
 ls = LibgenSearch()
 from hac_bot.bot_helper import Helper
-import os
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 chrome_options = webdriver.ChromeOptions()
@@ -344,7 +337,9 @@ class AstroBot():
                 new_usr = '@' + new_user_obj['username']
             except:
                 new_usr = new_user_obj['first_name']
-        context.bot.sendMessage(chat_id=update.message.chat_id, text = message.replace('$user',new_usr).replace('$title',update.message.chat.title))
+        welcome_message = context.bot.sendMessage(chat_id=update.message.chat_id, text = message.replace('$user',new_usr).replace('$title',update.message.chat.title))
+        time.sleep(90)
+        context.bot.delete_message(update.message.chat_id, welcome_message.message_id)
 
 
 # ----------------------------------------------------------------------------------------#
