@@ -289,6 +289,7 @@ class AstroBot():
                 update.message.reply_text(text="Error in retrieving data.")
                 context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 301 - current_location_weather):\n" + str(sys.exc_info()))
         except Exception as e:
+            update.message.reply_text(text="Error in retrieving data.")
             context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 303 - current_location_weather):\n" + str(e))
 
 
