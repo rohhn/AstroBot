@@ -4,8 +4,14 @@ from hac_bot.photobot import PhotoBot
 from hac_bot.bookbot import BookBot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
 import re, os, sys
+import logging
 
 #main file
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 def main():
 

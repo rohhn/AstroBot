@@ -231,20 +231,27 @@ class AstroBot():
             driver.implicitly_wait(10)
             driver.find_element_by_id('CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll').click()
             time.sleep(2)
-            driver.find_element_by_id('rightMenuButton').click()
-            #input_form = driver.find_element_by_id('searchBox')
+            driver.execute_script("document.getElementById('rightMenuButton').setAttribute('style', 'display:none;')")
+            driver.execute_script("document.getElementById('RightMenu').setAttribute('style', 'display:none;')")
             driver.find_element_by_id('searchBox').send_keys(f"{lat},{lon}")
-            #input_form.send_keys(Keys.RETURN)
             time.sleep(3)
             driver.find_element_by_class_name('ui-menu-item-wrapper').click()
             time.sleep(3)
+            try:
+                driver.execute_script("document.getElementById('poll_1').setAttribute('style', 'display:none;')")
+            except:
+                pass
+            try:
+                driver.execute_script("document.getElementById('adContainer_v').setAttribute('style', 'display:none;')")
+            except:
+                pass
+            try:
+                driver.execute_script("document.getElementById('adContainer_h').setAttribute('style', 'display:none;')")
+            except:
+                pass
             map = driver.find_element_by_id('map')
             map.screenshot('map.png')
-            size = map.size
             driver.close()
-            img = Image.open('map.png')
-            img = img.crop((0,100, size['width']-50,size['height']-100))
-            img.save('map.png')
             return 1
         except:
             print(sys.exc_info())
