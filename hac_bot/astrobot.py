@@ -259,6 +259,7 @@ class AstroBot():
             map = driver.find_element_by_id('map')
             map.screenshot('map.png')
             driver.close()
+            driver.quit()
             return 1
         except:
             print(sys.exc_info())
