@@ -75,6 +75,7 @@ class AstroBot():
         data = sorted(data, key = lambda x:x[1])
         context.bot.sendMessage(chat_id = context.job.context,text = (data[0][0]))
 
+
     # /daily_articles
     def send_daily_article(self, update,context):
         job_removed= self._helper.remove_job(str(update.message.chat_id), context)
@@ -85,6 +86,7 @@ class AstroBot():
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Articles related to astronomy will be everyday.\n\n Clear Skies!")
         context.job_queue.run_daily(self.get_daily_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id, name=str(update.message.chat_id))
   
+
     # /stop_daily_articles    
     def stop_daily_article(self, update, context):
         job_removed = self._helper.remove_job(str(update.message.chat_id), context)
@@ -109,7 +111,8 @@ class AstroBot():
                 return(data)
             except:
                 return False
-        
+
+
     def send_inline_news(self, update, context):
         query = update.inline_query.query
         results = list()
@@ -134,6 +137,7 @@ class AstroBot():
 
         context.bot.answer_inline_query(update.inline_query.id, results)
         context.bot.delete_message(chat_id=self.x.chat.id, message_id = self.x.message_id)
+
 
     # /news
     def send_news_article(self, update, context):
@@ -163,7 +167,8 @@ class AstroBot():
             return(wiki_link)
         else:
             return("Cannot find Wikipedia link.")
-    
+ 
+  
     def get_wiki_summary(self, search_text):
         if(profanity.contains_profanity(search_text)):
             return("censored.")
@@ -207,6 +212,7 @@ class AstroBot():
         moon_phase = td_response.findAll('section',{'class':'bk-focus'})[0].find('a').text
         return moon_image, moon_percent, moon_phase
 
+
     def get_bortle_info(self, lat, lon):
         url = "https://clearoutside.com/forecast/"+str(lat)+"/"+str(lon)
         #bortle = bs4(requests.get(url).text, 'html.parser')
@@ -215,6 +221,7 @@ class AstroBot():
             info.append(i.text)
         bortle_info = "Bortle " + info[1] + "\nSQM: " + info[0] + "\nArtificial Brightness: " + info[3] + "μcd/m2"
         return bortle_info
+
 
     def get_lp_img(self, lat, lon):
         try:
@@ -276,6 +283,7 @@ class AstroBot():
         weather_message = "\nStatus: "+description+"\nCloud Cover: "+str(cloud_cover)+"%\nWind Speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\n————————————\nMoon Illumination: "+moon_percent+"\nMoon Phase: "+moon_phase
         return weather_message, moon_image
 
+
     def send_current_location_weather(self, update, context):
         try:
             lat = update.message.location.latitude
@@ -322,14 +330,17 @@ class AstroBot():
                 update.message.reply_text(text='Invalid location.')
                 return
                        
-        try:    
+        try:
+            og = update.message
+            weather_message = og.reply_text(text = "Gathering data...")
             self.weather_msg, self.moon_photo = self.get_weather_data(lat, lon)
             self.bortle_msg = self.get_bortle_info(lat, lon)
             if self.get_lp_img(lat, lon) == 1:
                 self.lp_img = open('map.png', 'rb')
             else:
                 self.lp_img = self.moon_photo
-            update.message.reply_photo(caption = self.weather_msg, photo=self.lp_img,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
+            context.bot.delete_message(update.message.chat_id, weather_message.message_id)
+            og.reply_photo(caption = self.weather_msg, photo=self.lp_img,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
         except:
             update.message.reply_text(text="Error in retrieving data.")
             # context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
@@ -382,16 +393,18 @@ class AstroBot():
         elif update.callback_query.data == 'weather_info':
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle Data", callback_data="bortle_info")]]) ,caption=self.weather_msg)
 
+
     def books_alert(self, update, context):
         if(update.message.chat.type=='private'):
             text = "Please use @LibgenLibrary_Bot to search books"
             update.message.reply_text(text)
+
 
     def hac_rules(self, update, context):
         if str(update.message.chat_id) == os.environ['HAC_CHAT']:
             rules = """1. No spam/forward from other groups.\n2. Keep the discussion in the realm of Astronomy and related sciences.\n3. NSFW content will lead to a permanent ban.\n4. Do not message members of the group privately without cause/consent.\n\nIf any rule is breached, a warning will be issued and a second breach will result in a permanent ban.\n\n\nClear skies!"""
             update.message.reply_text(text = rules)
 
-    
 
-    
+    def creator(self, update, context):
+        update.message.reply_text(text= self._helper.get_creator())

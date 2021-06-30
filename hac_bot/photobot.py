@@ -315,3 +315,6 @@ class PhotoBot():
         elif update.callback_query.data == 'back_dso_data':
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Get detailed information", callback_data="full_dso_data")]]) ,caption=self.dso_msg)
 
+
+    def creator(self, update, context):
+        update.message.reply_text(text= self._helper.get_creator())

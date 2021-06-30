@@ -7,9 +7,11 @@ import re, os, sys
 import logging
 
 #main file
+project_path = os.path.abspath(os.path.dirname(__file__))
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+    level=logging.ERROR
 )
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,7 @@ def main():
     astrobot_dispatcher.add_handler(CommandHandler('book', astrobot.books_alert, pass_args=True))
     astrobot_dispatcher.add_handler(CommandHandler('rules', astrobot.hac_rules))
     astrobot_dispatcher.add_handler(CallbackQueryHandler(astrobot.callback_query_handler, pass_chat_data=True, pass_user_data= True))
+    astrobot_dispatcher.add_handler(MessageHandler(Filters.regex(re.compile(r'who made you?', re.IGNORECASE)), astrobot.creator, run_async=True))
     AstroBot_Updater.start_polling()
 
     #------------------------- PhotoBot functions -------------------------
@@ -78,6 +81,7 @@ def main():
     photobot_dispatcher.add_handler(astrometry_handler)
     photobot_dispatcher.add_handler(CallbackQueryHandler(photobot.callback_query_handler, pass_chat_data=True))
     photobot_dispatcher.add_handler(MessageHandler(Filters.regex(re.compile(r'@HAC_PhotoBot tell me about', re.IGNORECASE)), photobot.get_dso_data, run_async=True))
+    photobot_dispatcher.add_handler(MessageHandler(Filters.regex(re.compile(r'who made you?', re.IGNORECASE)), photobot.creator, run_async=True))
     PhotoBot_Updater.start_polling()
 
     #------------------------- BookBot functions -------------------------

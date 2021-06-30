@@ -50,3 +50,6 @@ class Helper():
         lat = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][0],2)
         lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1],2)
         return lat, lon
+
+    def get_creator(self):
+        return "Created by Rohan Deshmukh"
