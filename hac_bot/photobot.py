@@ -1,54 +1,35 @@
-from __future__ import absolute_import
-from telegram.ext import Updater, CommandHandler, JobQueue
+from cgitb import text
+import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from bs4 import BeautifulSoup as bs4
 import requests
 import datetime
 import pytz
 import time
-import json
-from hac_bot.astrometry import Astrometry
-from hac_bot.bot_helper import Helper
+import sys
+from . import common_functions, astrometry, utils
 import re, os
 
 
 indt = pytz.timezone("Asia/Kolkata")
 
-if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
-    ngc_messier_data = 'testing/new_dso.json'
-    sharpless_data = 'testing/sharpless_catalogue.json'
-    abell_data = 'testing/abell_pn_catalogue.json'
-elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
-    ngc_messier_data = 'new_dso.json'
-    sharpless_data = 'sharpless_catalogue.json'
-    abell_data = 'abell_pn_catalogue.json'
+try:
+    APOD_KEY = os.environ['APOD_KEY']
+    ADMIN_CHAT = os.environ['ADMIN_CHAT']
 
-f = open(ngc_messier_data,'r')
-deep_sky_info = json.load(f)
-f.close()
+except KeyError as error:
+    print("Save {} in environment variables.".format(error))
+    sys.exit(1)
 
-f = open(sharpless_data,'r')
-sharpless_cat = json.load(f)
-f.close()
-
-
-f = open(abell_data,'r')
-abell_cat = json.load(f)
-f.close()
 
 class PhotoBot():
 
-    def __init__(self):
-        self._helper = Helper()
-        self.astrometry = Astrometry()
-        return
-
 # ------------------------------------ APOD EVERYDAY -------------------------------------#
-        
+
+    @utils.is_approved
     def get_apod(self, context):
 
         #API call
-        url   = f"https://api.nasa.gov/planetary/apod?api_key={os.environ['APOD_KEY']}"
+        url   = f"https://api.nasa.gov/planetary/apod?api_key={APOD_KEY}"
         resp  = requests.get(url).json()
         url   = resp['url']
         date  = "Date: " + str(resp['date'])
@@ -59,11 +40,11 @@ class PhotoBot():
         except:
             message = (f"<a href=\"{url}\"><b>{title}</b></a>\n\n\n{explanation}\n<i>{date}</i>\n")
             context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
-        
-    
-    def send_apod(self, update, context):
 
-        job_removed= self._helper.remove_job(str(update.message.chat_id), context)
+    @utils.is_approved
+    def send_apod(self, update: telegram.Update, context):
+
+        job_removed= common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
             context.bot.delete_message(update.message.chat_id, r.message_id)
@@ -71,46 +52,44 @@ class PhotoBot():
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
         context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id, name=str(update.message.chat_id))
 
-   
-    def stop_apod(self, update, context):
-        job_removed = self._helper.remove_job(str(update.message.chat_id), context)
+    @utils.is_approved
+    def stop_apod(self, update: telegram.Update, context):
+        job_removed = common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
 
 # ------------------------------------ PLATESOLVE IMAGES -------------------------------------#
 
-    def astrometry_check_job_status(self, jobid, count):
+    def astrometry_check_job_status(self, jobid, count=1):
         if count <11:
             time.sleep(15)
-            job_status = self.astrometry.get_job_status(jobid)
+            job_status = astrometry.get_job_status(jobid)
             if job_status['status'] == 'success':
                 return True
             elif job_status['status'] == 'failure':
                 return False
             else:
                 return(self.astrometry_check_job_status(jobid,count+1))
-        else:
-            return False
+        return None
 
-    def check_job_creation(self, subid, count):
+    def check_job_creation(self, subid, count=1):
         if count <11:
             time.sleep(15)
-            submission_status = self.astrometry.get_submission_status(subid)
+            submission_status = astrometry.get_submission_status(subid)
             if len(submission_status['jobs']) > 0 and submission_status['jobs'][0] is not None:
                 return True
             else:
                 return(self.check_job_creation(subid, count+1))
-        else:
-            return False
+        return False
     
-
-    def platesolve(self, update, context):
+    @utils.is_approved
+    def platesolve(self, update: telegram.Update, context):
         try:
             if update.message.photo:
-                file = update.message.photo[-1].get_file()['file_path']
+                image_url = update.message.photo[-1].get_file()['file_path']
             else:
                 if update.message.document.mime_type == 'image/jpeg' or update.message.document.mime_type == 'image/png':
-                    file = update.message.document.get_file()['file_path']
+                    image_url = update.message.document.get_file()['file_path']
                 else:
                     raise Exception('non-image')
         except Exception as e:
@@ -122,46 +101,40 @@ class PhotoBot():
                 context.bot.sendMessage(chat_id=update.message.chat_id, text='Systems down. Please report the error to the admins.')
             return -1
 
-        upload_status = self.astrometry.url_upload(data={'request-json':json.dumps({'session':self.login_data['session'],'url':file, 'allow_commercial_usage':'n', 'allow_modifications':'n', 'publicly_visible':'n'})})
+        upload_status = astrometry.url_upload(image_url, self.login_data)
         if upload_status['status'] == 'success':
             bot_msg = update.message.reply_text(text="Uploaded successfully. It may take up to 3 minutes to get a result.")
             if self.check_job_creation(upload_status['subid'],1):
-                submission_status = self.astrometry.get_submission_status(upload_status['subid'])
+                submission_status = astrometry.get_submission_status(upload_status['subid'])
                 jobid = submission_status['jobs'][0]
                 bot_msg.edit_text( text="Analyzing...")
-                if self.astrometry_check_job_status(jobid,1):
-                    final_image = self.astrometry.get_final_image(jobid)
+
+                job_status = self.astrometry_check_job_status(jobid)
+                if job_status is True:
+                    final_image = astrometry.get_final_image(jobid)
                     
                     bot_msg.edit_text( text="Final image ready.")
-                    try:
-                        job_info = self.astrometry.get_job_info(jobid)
-                        self.detailed_msg = ""
-                        for obj in job_info['objects_in_field']:
-                            if re.search('^M ', obj):
-                                obj = re.sub("M ","Messier ", obj)
-                            try:
-                                for t in deep_sky_info:
-                                    for name in t['object name']:
-                                        if name.lower() == obj.lower().strip():
-                                            names = '/'.join(t['object name'])
-                                            try:
-                                                msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ' + t['visibility'])
-                                            except:
-                                                msg = str(names + ' is a ' + t['object type'] + ' in the constellation ' + t['constellation'] + '. ')
-                                            if re.match(msg, self.detailed_msg):
-                                                msg = ""
-                                            else:
-                                                self.detailed_msg = self.detailed_msg + msg + '\n\n'
-                                            
-
-                            except Exception as e:
-                                print('Uknown object: {}'.format(obj))
-                        objects = ', '.join(job_info['objects_in_field'])
-                        self.objects = "Identified objects: " + objects
+                    try:    
                         try:
-                            self.astrometry_image_msg = update.message.reply_photo(photo= final_image, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]))
+                            update.message.reply_photo(
+                                photo= final_image,
+                                reply_markup=InlineKeyboardMarkup(
+                                    [
+                                        [InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects_{}".format(jobid))],
+                                        [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects_{}".format(jobid))]
+                                    ]
+                                )
+                            )
                         except:
-                            self.astrometry_image_msg = update.message.reply_text(text="Unable to fetch final image.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]))
+                            update.message.reply_text(
+                                text="Unable to fetch final image.",
+                                reply_markup=InlineKeyboardMarkup(
+                                    [
+                                        [InlineKeyboardButton(text = "List identified objects", callback_data="list_astrometry_objects_{}".format(jobid))],
+                                        [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects_{}".format(jobid))]
+                                    ]
+                                )
+                            )
                     except Exception as e:
                         print(e)
                         try:
@@ -171,6 +144,22 @@ class PhotoBot():
                     return -1
                 else:
                     bot_msg.edit_text(text="Unable to solve the given image.")
+                    if job_status is False:
+                        try:
+                            username = "@{}".format(update.message.from_user.username)
+                        except:
+                            username = update.message.from_user.first_name
+
+                        failure_info = "Job ID: {}\nUsername: {}\nUser ID: {}".format(
+                            jobid,
+                            username,
+                            update.message.from_user.id
+                        )
+
+                        context.bot.sendMessage(
+                            chat_id=ADMIN_CHAT,
+                            text=failure_info
+                        )
                     return -1
             else:
                 bot_msg.edit_text(text="Job took too long. Request closed.")
@@ -178,14 +167,15 @@ class PhotoBot():
         else:
             return -1
 
-
-    def timeout(self, update, context):
+    @utils.is_approved
+    def timeout(self, update: telegram.Update, context):
         self.req_msg.edit_text(text="Your request timed out. Please try again.")
         return -1 
 
-    def start_platesolve(self, update, context):
+    @utils.is_approved
+    def start_platesolve(self, update: telegram.Update, context):
         try:
-            self.login_data = self.astrometry.login(data={'request-json': json.dumps({'apikey':os.environ['ASTROMETRY_KEY']})})
+            self.login_data = astrometry.login()
             if self.login_data['status'] == 'success':
                 self.req_msg = update.message.reply_text(text='Send me a picture to analyze.\n\nType /cancel to abort the request.')
                 return 1
@@ -199,16 +189,23 @@ class PhotoBot():
             self.req_msg = update.message.reply_text(text='Systems down. Please report the error to the admins.')
             return -1
 
-    def cancel(self, update, context):
+    @utils.is_approved
+    def cancel(self, update: telegram.Update, context):
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Cancelled request.")
         return -1
 
 # ------------------------------------ GET INFO ON DEEPSKY OBJECTS -------------------------------------#
 
-    def get_dso_data(self, update, context):
-        if update.message.text.lower().split('@hac_photobot tell me about')[1].strip() != '':
-            search_object = update.message.text.lower().split('@hac_photobot tell me about')[1].strip()
-            
+    @utils.is_approved
+    def get_dso_data(self, update: telegram.Update, context):
+        search_text=""
+        for i in context.args:
+            search_text += i + ' '
+
+        # if update.message.text.lower().split('@hac_photobot tell me about')[1].strip() != '':
+        if search_text != '':
+            # search_object = update.message.text.lower().split('@hac_photobot tell me about')[1].strip()
+            search_object = search_text
             ignore_keys = ['object name', 'object type', 'constellation', 'deep_sky_image_link', 'visibility']
             cat = 1
             if re.search('m[ ]*[0-9]+', search_object.lower()):
@@ -237,84 +234,26 @@ class PhotoBot():
                 cat = 3
                 search_object = re.sub('^abell[ ]*','abell ', search_object.lower())
             print(search_object)
-            try:
-                self.full_detail_msg = ""
-                self.dso_msg = ""
-                if cat ==1:
-                    for t in deep_sky_info:
-                        for name in t['object name']:
-                            if name.lower() == search_object.lower().strip():
-                                found_object = [t]
-                    if found_object:
-                        for x in found_object:
-                            img_link = x['deep_sky_image_link']
-                            try:
-                                names = '/'.join(x['object name'])
-                                self.dso_msg = str(names + ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. ' + x['visibility'] + '\n')
-                            except:
-                                self.dso_msg = str(names+ ' is a ' + x['object type'] + ' in the constellation ' + x['constellation'] + '. \n')
-                            
-                            for key in x:
-                                if key not in ignore_keys:
-                                    self.full_detail_msg += '\n' + key + ': ' + x[key]
-                            update.message.reply_photo(caption=self.dso_msg, photo = img_link, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Get detailed information', callback_data='full_dso_data')]]))
-                    else:
-                        msg = 'Object '+ search_object +' not found'
-                        update.message.reply_text(text=msg)
-                elif cat == 2:
-                    x = [f for f in sharpless_cat if f.lower()==search_object.lower()]
-                    if x:
-                        img_link = sharpless_cat[x[0]]['deep_sky_image_link']
-                        names = "/".join(sharpless_cat[x[0]]['alt_names'])
-                        if names:
-                            names = sharpless_cat[x[0]]['object name'] + '/' + names
-                        else:
-                            names = sharpless_cat[x[0]]['object name']
-                        self.dso_msg = str(names + ' - ' + sharpless_cat[x[0]]['short_description'])
-                        self.full_detail_msg = sharpless_cat[x[0]]['full_description']
-                        update.message.reply_photo(caption=self.dso_msg, photo = img_link, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Get detailed information', callback_data='full_dso_data')]]))
-                elif cat == 3:
-                    x = [f for f in abell_cat if f.lower()==search_object.lower()]
-                    if x:
-                        img_link = abell_cat[x[0]]['image_link']
-                        name = abell_cat[x[0]]['object name']
-                        description = abell_cat[x[0]]['description'].replace('PN', 'Planetary nebula')
-                        for v in description.split('\n'):
-                            if bool(v) & bool(re.search('^[0-9]',v)):
-                                v = '<i><u>' + v + '</u></i>'
-                            self.dso_msg = self.dso_msg + v + '\n'
-                        self.dso_msg = str('<b>'+name+'</b>\n' + self.dso_msg)
-                        html_message = f"<a href=\"{img_link}\">&#8204;</a>{str(self.dso_msg)}"
-                        update.message.reply_text(text=html_message, parse_mode='HTML')
-            except Exception as e:
-                msg = 'Object '+ search_object +' not found'
-                update.message.reply_text(text=msg)
-                print(e)
+            search_object_index = search_object.replace(' ', '').lower()
+            if search_object_index in common_functions.dso_data:
+                found_object = common_functions.dso_data[search_object_index]
+
+                if found_object['full_description'] is not None:
+
+                    markup = InlineKeyboardMarkup(
+                        [
+                            [InlineKeyboardButton(text='Get detailed information', callback_data='full_dso_data_{}'.format(search_object_index))]
+                        ]
+                    )
+                else:
+                    markup = None
+
+                update.message.reply_photo(
+                    photo= found_object['image_link'],
+                    caption= found_object['short_description'],
+                    reply_markup= markup
+                )
+            else:
+                update.message.reply_text(text="Object {} not found.".format(search_text))
         else:
-            msg = 'No object entered.'
-            update.message.reply_text(text=msg)
-
-
-# ----------------------------------------------------------------------------------------#
-
-    def help(self, update, context):
-        #new help
-        if update.message.chat.type == 'private':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text=self._helper.photobot_help + "\n\n/startapod - Receive daily Astronomy Picture of the Day from NASA.\n\n/stopapod - Stop receiving APOD.")
-
-
-    def callback_query_handler(self, update, context):
-        if update.callback_query.data == 'list_astrometry_objects':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back_astrometry")]]) ,caption=self.objects)
-        if update.callback_query.data == 'detailed_astrometry_objects':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back_astrometry")]]) ,caption=self.detailed_msg)
-        elif update.callback_query.data == 'back_astrometry':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="List identified objects", callback_data="list_astrometry_objects")], [InlineKeyboardButton(text = "Detailed objects info", callback_data="detailed_astrometry_objects")]]) ,caption="")
-        elif update.callback_query.data == 'full_dso_data':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back_dso_data")]]) ,caption=self.full_detail_msg)
-        elif update.callback_query.data == 'back_dso_data':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Get detailed information", callback_data="full_dso_data")]]) ,caption=self.dso_msg)
-
-
-    def creator(self, update, context):
-        update.message.reply_text(text= self._helper.get_creator())
+            update.message.reply_text(text="Enter an object name to search.")

@@ -1,48 +1,62 @@
 import requests
+import sys
+import json
+import os
 
-class Astrometry():
-
-	get_photo, job_status = range(2)
-	state = get_photo
-
-	def __init__(self):
-		self.args = {'allow_commercial_usage':'n',
-					'allow_modifications':'n',
-					'publicly_visible':'n',
-					}
+try:
+	ASTROMETRY_KEY = os.environ['ASTROMETRY_KEY']
+except KeyError as error:
+	print("Save {} in environment variables.".format(error))
+	sys.exit(1)
 
 
-	def login(self, data):
-		api_key = "pqudnwshqryknetf"
-		url = "http://nova.astrometry.net/api/login"
-		login_data = requests.post(url, data=data).json()
-		return login_data
+def login():
+	url = "http://nova.astrometry.net/api/login"
+	payload = {
+		'request-json': json.dumps(
+			{
+				'apikey': ASTROMETRY_KEY
+			}
+		)
+	}
+	login_data = requests.post(url, data=payload).json()
+	return login_data
 
 
-	def url_upload(self, data):
-		url = "http://nova.astrometry.net/api/url_upload"
-		data.update(self.args)
-		upload_response = requests.post(url, data=data).json()
-		return upload_response
+def url_upload(image_url, login_data):
+	url = "http://nova.astrometry.net/api/url_upload"
+	payload = {
+		'request-json': json.dumps(
+			{
+				'session':login_data['session'],
+				'url':image_url,
+				'allow_commercial_usage':'n',
+				'allow_modifications':'n',
+				'publicly_visible':'n'
+			}
+		)
+	}
+	upload_response = requests.post(url, data=payload).json()
+	return upload_response
 
 
-	def get_submission_status(self, subid):
-		url="http://nova.astrometry.net/api/submissions/" + str(subid)
-		submission_status = requests.get(url).json()
-		return submission_status
+def get_submission_status(subid):
+	url="http://nova.astrometry.net/api/submissions/" + str(subid)
+	submission_status = requests.get(url).json()
+	return submission_status
 
 
-	def get_job_status(self, jobid):
-		url = "http://nova.astrometry.net/api/jobs/" + str(jobid)
-		job_status = requests.get(url).json()
-		return job_status
+def get_job_status(jobid):
+	url = "http://nova.astrometry.net/api/jobs/" + str(jobid)
+	job_status = requests.get(url).json()
+	return job_status
 
 
-	def get_job_info(self, jobid):
-		url = "http://nova.astrometry.net/api/jobs/"+str(jobid)+"/info/"
-		job_info = requests.get(url).json()
-		return job_info
+def get_job_info(jobid):
+	url = "http://nova.astrometry.net/api/jobs/"+str(jobid)+"/info/"
+	job_info = requests.get(url).json()
+	return job_info
 
 
-	def get_final_image(self, jobid):
-		return ("http://nova.astrometry.net/annotated_display/" + str(jobid))
+def get_final_image(jobid):
+	return ("http://nova.astrometry.net/annotated_display/" + str(jobid))
