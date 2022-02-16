@@ -10,3 +10,5 @@ test.py
 *.pyc
 *.log
 *.png
+refactor/
+.vscode/

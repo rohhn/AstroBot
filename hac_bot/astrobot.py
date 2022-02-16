@@ -1,35 +1,36 @@
-import re, os, sys, random, time, pytz, requests
+from importlib import import_module
+import os
+import sys
+import random
+import time
+import pytz
+import datetime
+import traceback
+import re
+from io import BytesIO
+import requests
 from bs4 import BeautifulSoup as bs4
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
-import datetime
 from better_profanity import profanity
-from libgen_api import LibgenSearch
-ls = LibgenSearch()
-from hac_bot.bot_helper import Helper
+import telegram
+from . import common_functions, utils
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
-from PIL import Image
 
 ind_tz = pytz.timezone('Asia/Kolkata')
 
-if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
-    chromedriver_path = '/Users/rohan/Desktop/projects/bot_env/bin/chromedriver'
-    openweather_key = open('config/openweather_key.conf','r').read()
-elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
-    chromedriver_path = '/var/lib/chromedriver'
-    openweather_key = os.environ['OPENWEATHER_KEY']
-else:
-    print("Development Environment not known. Check Environment variable - DEPLOYMENT_ENVIRONMENT")
-    exit()
+try:
+    CHROMEDRIVER_PATH = os.environ['CHROMEDRIVER_PATH']
+    GOOGLE_CHROME_BIN = os.environ['GOOGLE_CHROME_BIN']
+    chrome_options.binary_location = GOOGLE_CHROME_BIN
+except KeyError as error:
+    print("Save {} in environment variables.".format(error))
+    sys.exit(1)
 
 
-class AstroBot():
-
-    def __init__(self):
-        self._helper = Helper()
+class AstroBot:
 
 # ------------------- GENERATE RANDOM ARTICLES FROM POOL OF TOPICS ----------------------#
 
@@ -39,26 +40,25 @@ class AstroBot():
 
         keyword = random_topics[random.randint(0,len(random_topics)-1)]
         url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
-        articles_text = self._helper.scrape(url)
+        articles_text = common_functions.scrape(url)
         data = []
         for i in articles_text:
-            data.append([self._helper.get_article_url(i),self._helper.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+            data.append([common_functions.get_article_url(i),common_functions.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
 
         return(data[random.randrange(0,len(articles_text),1)][0])
 
     
     # /randomarticle
-    def send_random_article(self, update, context):
+    @utils.is_approved
+    def send_random_article(self, update: telegram.Update, context):
         try:
             update.message.reply_text(self.get_random_article())
         except:
             update.message.reply_text("Error in retrieving data.")
-            # context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(random_article):\n" + str(sys.exc_info()))
-
-# ----------------------------------------------------------------------------------------#
 
 # ----------------------------------- DAILY ARTICLES -------------------------------------- #
 
+    @utils.is_approved
     def get_daily_article(self, context):
         weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','space+observations']
         day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
@@ -68,17 +68,18 @@ class AstroBot():
             topic_day = weekly_article_topics[random.randint(0,len(weekly_article_topics)-1)] #Random article from pool of topics
         
         url = "https://www.google.com/search?q="+topic_day+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjZzKWTjv3qAhVFyzgGHeKzCf8Q_AUoAXoECBUQAw&biw=1680&bih=947"
-        #articles_text = scrape(url)
+
         data = []
-        for i in self._helper.scrape(url):
-            data.append([self._helper.get_article_url(i),self._helper.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+        for i in common_functions.scrape(url):
+            data.append([common_functions.get_article_url(i),common_functions.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
         data = sorted(data, key = lambda x:x[1])
         context.bot.sendMessage(chat_id = context.job.context,text = (data[0][0]))
 
 
     # /daily_articles
+    @utils.is_approved
     def send_daily_article(self, update,context):
-        job_removed= self._helper.remove_job(str(update.message.chat_id), context)
+        job_removed= common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
             context.bot.delete_message(update.message.chat_id, r.message_id)
@@ -87,13 +88,12 @@ class AstroBot():
         context.job_queue.run_daily(self.get_daily_article, time = datetime.time(17,0,0,tzinfo=ind_tz), context = update.message.chat_id, name=str(update.message.chat_id))
   
 
-    # /stop_daily_articles    
+    # /stop_daily_articles
+    @utils.is_approved
     def stop_daily_article(self, update, context):
-        job_removed = self._helper.remove_job(str(update.message.chat_id), context)
+        job_removed = common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Daily articles have been stopped.')
-
-# ----------------------------------------------------------------------------------------#
 
 # ----------------------- FETCH NEWS ARTICLES BASED ON KEYWORDS BY USER --------------------------- #
 
@@ -106,13 +106,13 @@ class AstroBot():
             try:
                 url = "https://www.google.com/search?q="+keyword+"&source=lnms&tbm=nws&sa=X&ved=2ahUKEwjTi4TOw_7qAhWzyDgGHVjpAyYQ_AUoAXoECBUQAw&biw=1680&bih=948"
                 data = []
-                for i in self._helper.scrape(url):
-                    data.append([self._helper.get_article_url(i),self._helper.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
+                for i in common_functions.scrape(url):
+                    data.append([common_functions.get_article_url(i),common_functions.get_time(i),i.find(class_ = "BNeawe vvjwJb AP7Wnd").contents[0]])
                 return(data)
             except:
                 return False
 
-
+    @utils.is_approved
     def send_inline_news(self, update, context):
         query = update.inline_query.query
         results = list()
@@ -140,6 +140,7 @@ class AstroBot():
 
 
     # /news
+    @utils.is_approved
     def send_news_article(self, update, context):
         search_text=""
         for i in context.args:
@@ -152,8 +153,6 @@ class AstroBot():
             kb_list = [[InlineKeyboardButton(text='Search', switch_inline_query_current_chat="")]]
             kb = InlineKeyboardMarkup(kb_list)
             self.x= update.message.reply_text(text='Click the button to search', reply_markup = kb)
-
-# ----------------------------------------------------------------------------------------------#
 
 # ----------------------------- WIKI SUMMARY AND LINK GENERATOR --------------------------------#
     def get_wiki_link(self, search_text):
@@ -191,7 +190,7 @@ class AstroBot():
             except:
                 return("Cannot find Wikipedia page.")
                 
-    
+    @utils.is_approved
     def send_wiki_info(self, update, context):
         search_text=""
         for i in context.args:
@@ -199,40 +198,14 @@ class AstroBot():
         search_text += "+site:wikipedia.org"
         update.message.reply_text(self.get_wiki_summary(search_text.lower()))
 
-# ----------------------------------------------------------------------------------------------#
-
 # ------------------------------------ WEATHER UPDATES --------------------------------------#
 
-    def get_moon_info(self):
-        td_url = "https://www.timeanddate.com/moon/phases/india/hyderabad"
-        td_response = requests.get(td_url)
-        td_response = bs4(td_response.text, 'html.parser')
-        moon_image = "https://www.timeanddate.com/" + str(td_response.find(id='cur-moon')['src'])
-        moon_percent = td_response.find(id='cur-moon-percent').text
-        moon_phase = td_response.findAll('section',{'class':'bk-focus'})[0].find('a').text
-        return moon_image, moon_percent, moon_phase
-
-
-    def get_bortle_info(self, lat, lon):
-        url = "https://clearoutside.com/forecast/"+str(lat)+"/"+str(lon)
-        #bortle = bs4(requests.get(url).text, 'html.parser')
-        info = []
-        for i in bs4(requests.get(url).text, 'html.parser').find('span', class_ = 'btn-primary').findAll('strong'):
-            info.append(i.text)
-        bortle_info = "Bortle " + info[1] + "\nSQM: " + info[0] + "\nArtificial Brightness: " + info[3] + "μcd/m2"
-        return bortle_info
-
-
     def get_lp_img(self, lat, lon):
+
+        img_file = None
+
         try:
-            if os.environ['DEPLOYMENT_ENVIRONMENT'] == 'DEV':
-                chromedriver_path = '/Users/rohan/Desktop/projects/bot_env/bin/chromedriver'
-            elif os.environ['DEPLOYMENT_ENVIRONMENT'] == 'PROD':
-                chromedriver_path = '/var/lib/chromedriver'
-            else:
-                print("Development Environment not known. Check Environment variable - DEPLOYMENT_ENVIRONMENT")
-                return
-            driver = webdriver.Chrome(chromedriver_path, options=chrome_options)
+            driver = webdriver.Chrome(CHROMEDRIVER_PATH, options=chrome_options)
             driver.set_window_size(800,800)
             driver.get(f'https://www.lightpollutionmap.info/#zoom=10&lat={lat}&lon={lon}&layers=B0FFFFFFTFFFFFFFFFF')
             driver.implicitly_wait(10)
@@ -257,62 +230,36 @@ class AstroBot():
             except:
                 pass
             map = driver.find_element_by_id('map')
-            map.screenshot('map.png')
-            driver.close()
-            driver.quit()
-            return 1
+            temp_img = map.screenshot_as_png
+            img_file = BytesIO(temp_img)
         except:
             print(sys.exc_info())
-            return 0
+        finally:
+            driver.close()
+            driver.quit()
 
+        return img_file
 
-    def get_weather_data(self, lat, lon):
-        
-        openweather_url = f"https://api.openweathermap.org/data/2.5/onecall?lat={str(lat)}&lon={str(lon)}&exclude=minutely&units=metric&appid={openweather_key}"
-        openweather_response = (requests.get(openweather_url)).json()
-        
-        sunset_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['sunset'])).astimezone(ind_tz).time()
-        current_time = datetime.datetime.fromtimestamp(int(openweather_response['current']['dt'])).astimezone(ind_tz).time()
-        cloud_cover = openweather_response['current']['clouds']
-        wind_speed = round(float(openweather_response['current']['wind_speed']*18/5),2)
-        description = openweather_response['current']['weather'][0]['description']
-        dew_point  = openweather_response['current']['dew_point']
-        temperature  = openweather_response['current']['temp']
-        moon_image, moon_percent, moon_phase = self.get_moon_info()
-    
-        #weather_message = "Weather update for "+search_data+ "at " + str(current_time) +"\nStatus: "+description+"\nCloud Cover: "+str(cloud_cover)+"%\nWind Speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\n--------------------\nMoon Illumination: "+moon_percent+"\nMoon Phase: "+moon_phase
-        weather_message = "\nStatus: "+description+"\nCloud Cover: "+str(cloud_cover)+"%\nWind Speed: "+str(wind_speed)+"kmph\nTemperature: "+str(temperature)+"°C\nDew Point: "+str(dew_point)+"°C\n————————————\nMoon Illumination: "+moon_percent+"\nMoon Phase: "+moon_phase
-        return weather_message, moon_image
-
-
+    @utils.is_approved
     def send_current_location_weather(self, update, context):
         try:
             lat = update.message.location.latitude
             lon = update.message.location.longitude           
             try:    
-                self.weather_msg, self.moon_photo = self.get_weather_data(lat, lon)
-                try:
-                    self.bortle_msg = self.get_bortle_info(lat, lon)
-                except:
-                    self.bortle_msg = ""
-                if self.get_lp_img(lat, lon) == 1:
-                    self.lp_img = open('map.png', 'rb')
-                else:
-                    self.lp_img = self.moon_photo
-                update.message.reply_photo(caption = self.weather_msg, photo=self.lp_img, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_info')]]))
-                #context.bot.sendMessage(chat_id=update.message.chat_id, text=bortle_info)
+                weather_msg, moon_photo = common_functions.get_weather_data(lat, lon)
+                lp_img = self.get_lp_img(lat, lon)
+                if lp_img is None:
+                    lp_img = moon_photo
+                update.message.reply_photo(caption = weather_msg, photo=lp_img, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text='Bortle info', callback_data='bortle_{}_{}'.format(lat, lon))]]))
             except:
                 update.message.reply_text(text="Error in retrieving data.")
-                # context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 301 - current_location_weather):\n" + str(sys.exc_info()))
         except Exception as e:
             update.message.reply_text(text="Error in retrieving data.")
-            # context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 303 - current_location_weather):\n" + str(e))
 
+    @utils.is_approved
+    def send_weather_data(self, update: telegram.Update, context):
 
-    def send_weather_data(self, update, context):
-        search_text=""
-        for i in context.args:
-            search_text += i + ' '
+        search_text = update.message.text.split('/weather ')[1].strip()
             
         if(re.search("^[0-9]",search_text)):
             lat, lon = search_text.replace(' ','').split(',')
@@ -326,7 +273,7 @@ class AstroBot():
             return
         else:
             try:
-                lat, lon = self._helper.get_coordintes(search_text)
+                lat, lon = common_functions.get_coordintes(search_text)
             except:
                 update.message.reply_text(text='Invalid location.')
                 return
@@ -334,21 +281,19 @@ class AstroBot():
         try:
             og = update.message
             weather_message = og.reply_text(text = "Gathering data...")
-            self.weather_msg, self.moon_photo = self.get_weather_data(lat, lon)
-            self.bortle_msg = self.get_bortle_info(lat, lon)
-            if self.get_lp_img(lat, lon) == 1:
-                self.lp_img = open('map.png', 'rb')
-            else:
-                self.lp_img = self.moon_photo
+            weather_msg, moon_photo = common_functions.get_weather_data(lat, lon)
+            lp_img = self.get_lp_img(lat, lon)
+            if lp_img is None:
+                lp_img = moon_photo
             context.bot.delete_message(update.message.chat_id, weather_message.message_id)
-            og.reply_photo(caption = self.weather_msg, photo=self.lp_img,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_info")]]))
+            og.reply_photo(caption = weather_msg, photo=lp_img,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text = "Bortle Data", callback_data="bortle_{}_{}".format(lat, lon))]]))
         except:
+            print(traceback.format_exc())
             update.message.reply_text(text="Error in retrieving data.")
-            # context.bot.sendMessage(chat_id=str(os.environ["HAC_TEST_CHAT"]), text = "AstroBot error(line 336 - get_weather):\n" + str(sys.exc_info()))
-
 
 # ------------------------------------ WELCOME NEW MEMBERS -------------------------------------#
 
+    @utils.is_approved
     def welcome_new_user(self, update, context):
         for new_user_obj in update.message.new_chat_members:
             new_usr = ""
@@ -361,51 +306,9 @@ class AstroBot():
         time.sleep(90)
         context.bot.delete_message(update.message.chat_id, welcome_message.message_id)
 
-
 # ----------------------------------------------------------------------------------------#
-# ----------------------------------------------------------------------------------------#
-
-    def help(self, update, context):
-        #new help
-        if update.message.chat.type == 'private':
-            context.bot.sendMessage(chat_id=update.message.chat_id, text= self._helper.astrobot_help)
-        else:
-            inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
-                        [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
-                        [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
-            context.bot.sendMessage(chat_id= update.message.chat_id,text="Show commands for:", reply_markup=InlineKeyboardMarkup(inline_kb))
-
-
-    def callback_query_handler(self, update, context):
-
-        if update.callback_query.data == 'astrobot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self._helper.astrobot_help)
-        elif update.callback_query.data == 'photobot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self._helper.photobot_help)
-        elif update.callback_query.data == 'bookbot':
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="menu")]]) ,text=self._helper.bookbot_help)
-        elif update.callback_query.data == 'menu':
-            inline_kb = [[InlineKeyboardButton(text='AstroBot', callback_data="astrobot")],
-                        [InlineKeyboardButton(text='PhotoBot', callback_data="photobot")],
-                        [InlineKeyboardButton(text='BookBot', callback_data="bookbot")]]
-            update.callback_query.message.edit_text(reply_markup=InlineKeyboardMarkup(inline_kb), text='Show commands for:')
-        elif update.callback_query.data == 'bortle_info':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Weather Data", callback_data="weather_info")]]) ,caption=self.bortle_msg)
-        elif update.callback_query.data == 'weather_info':
-            update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Bortle Data", callback_data="bortle_info")]]) ,caption=self.weather_msg)
-
-
-    def books_alert(self, update, context):
-        if(update.message.chat.type=='private'):
-            text = "Please use @LibgenLibrary_Bot to search books"
-            update.message.reply_text(text)
-
 
     def hac_rules(self, update, context):
         if str(update.message.chat_id) == os.environ['HAC_CHAT']:
             rules = """1. No spam/forward from other groups.\n2. Keep the discussion in the realm of Astronomy and related sciences.\n3. NSFW content will lead to a permanent ban.\n4. Do not message members of the group privately without cause/consent.\n\nIf any rule is breached, a warning will be issued and a second breach will result in a permanent ban.\n\n\nClear skies!"""
             update.message.reply_text(text = rules)
-
-
-    def creator(self, update, context):
-        update.message.reply_text(text= self._helper.get_creator())
