@@ -117,7 +117,8 @@ def bot_credits(update, context):
 
 @utils.is_approved
 def bot_help(update, context):
-    message = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/analyze or /analyse - Plate-solve an astronomy image.\n\n/find <DSO name> - Display information about any Deep Space Object present in our datastore.\n\n/book <bookname> - Search for the book title on Library Genesis.\n\n/help - Display all bot commands."
+    # message = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/analyze or /analyse - Plate-solve an astronomy image.\n\n/find <DSO name> - Display information about any Deep Space Object present in our datastore.\n\n/book <bookname> - Search for the book title on Library Genesis.\n\n/help - Display all bot commands."
+    message = "Commands for @HAC_AstroBot:\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/analyze or /analyse - Plate-solve an astronomy image.\n\n/find <DSO name> - Display information about any Deep Space Object present in our datastore.\n\n/help - Display all bot commands."
     update.message.reply_text(text=message)
 
 
