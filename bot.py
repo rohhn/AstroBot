@@ -85,6 +85,7 @@ if __name__ == "__main__":
     config.check_backend_config()
 
     for group_id in config.approved_groups:
-        bot_updater.bot.job_queue.run_daily(photobot.get_apod,time=config.APOD_TIME, context=group_id, name=group_id)
+        print(f"Starting APOD in {group_id}")
+        bot_updater.job_queue.run_daily(photobot.get_apod,time=config.APOD_TIME, context=group_id, name=group_id)
 
     bot_updater.start_polling()
