@@ -1,7 +1,12 @@
 import os
 import sys
 import json
+import pytz
+import datetime
 from . import backend
+
+TIMEZONE = pytz.timezone("Asia/Kolkata")
+APOD_TIME = datetime.time(11, 0, 0, tzinfo=TIMEZONE)
 
 def check_backend_config():
     if os.environ.get('BOT_BACKEND') == 'mongodb':

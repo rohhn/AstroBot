@@ -6,8 +6,6 @@ from pymongo.errors import ConfigurationError, ConnectionFailure, OperationFailu
 from . import utils, config, backend
 
 
-ind_tz = pytz.timezone("Asia/Kolkata")
-
 @utils.is_bot_admin
 def add_group(update: Update, context: CallbackContext):
     
@@ -20,7 +18,7 @@ def add_group(update: Update, context: CallbackContext):
                     data = {
                         'group_id': new_chat_id,
                         'added_by': update.message.from_user.username,
-                        'added_on': datetime.datetime.now(tz=ind_tz)
+                        'added_on': datetime.datetime.now(tz=config.TIMEZONE)
                     }
                     db_table_name = f"{config.MONGODB_DB_NAME}.approved_groups"  # Format: DB_NAME.TABLE_NAME
 
@@ -115,11 +113,15 @@ def add_user_to_blacklist(update: Update, context: CallbackContext):
 
     new_chat_id = update.message.text.split('/blacklist')[1].strip()
 
+    if new_chat_id in config.BOT_ADMINS:
+        update.message.reply_text("Et tu, Brute?")
+        return
+
     data = {
         'user_id': new_chat_id,
         'added_by': update.message.from_user.username,
         'infringement_count': 3,
-        'added_on': datetime.datetime.now(tz=ind_tz)
+        'added_on': datetime.datetime.now(tz=config.TIMEZONE)
     }
 
     if new_chat_id not in config.blacklist:
@@ -167,10 +169,14 @@ def warn_user(update: Update, context: CallbackContext):
 
     new_chat_id = update.message.text.split('/warn')[1].strip()
 
+    if new_chat_id in config.BOT_ADMINS:
+        update.message.reply_text("Et tu, Brute?")
+        return
+
     data = {
         'user_id': new_chat_id,
         'added_by': update.message.from_user.username,
-        'added_on': datetime.datetime.now(tz=ind_tz)
+        'added_on': datetime.datetime.now(tz=config.TIMEZONE)
     }
 
     if new_chat_id not in config.blacklist:

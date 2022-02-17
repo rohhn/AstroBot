@@ -16,7 +16,8 @@ Send map location in chat: Fetch current weather update for given location.\n
 /book <bookname>: Search for the book title on Library Genesis.\n
 /help: Display all bot commands.""",
     """/start_apod: Receive daily APOD from NASA at 11AM IST.\n
-/stop_apod: Stop receiving daily APOD."""
+/stop_apod: Stop receiving daily APOD.
+/credits: Bot development credits."""
 ]
 
 def get_moon_info():

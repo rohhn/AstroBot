@@ -4,7 +4,8 @@ from hac_bot import common_functions, admin_functions, config
 from hac_bot.astrobot import AstroBot
 from hac_bot.photobot import PhotoBot
 from hac_bot.bookbot import BookBot
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler, TypeHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler
+from telegram.ext import Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
 
 
 #main file
@@ -82,5 +83,8 @@ if __name__ == "__main__":
     bot_dispatcher.add_handler(CommandHandler('test', common_functions.testing, pass_args=True, run_async=True), group=1)
 
     config.check_backend_config()
+
+    for group_id in config.approved_groups:
+        bot_updater.bot.job_queue.run_daily(photobot.get_apod,time=config.APOD_TIME, context=group_id, name=group_id)
 
     bot_updater.start_polling()

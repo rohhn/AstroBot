@@ -8,8 +8,6 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
 from hac_bot import admin_functions
 from . import common_functions, astrometry, utils, config
 
-ind_tz = pytz.timezone("Asia/Kolkata")
-
 
 class PhotoBot():
 
@@ -43,7 +41,7 @@ class PhotoBot():
             context.bot.delete_message(update.message.chat_id, r.message_id)
 
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
-        context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=ind_tz), context=update.message.chat_id, name=str(update.message.chat_id))
+        context.job_queue.run_daily(self.get_apod,time=config.APOD_TIME, context=update.message.chat_id, name=str(update.message.chat_id))
 
     @utils.is_not_blacklist
     @utils.is_approved
@@ -154,7 +152,7 @@ class PhotoBot():
                                 'username': username,
                                 'user_id': update.message.from_user.id,
                                 'added_by': 'bot',
-                                'added_on': datetime.datetime.now(tz=ind_tz)
+                                'added_on': datetime.datetime.now(tz=config.TIMEZONE)
                             }
 
                         admin_functions.update_watch_list(data, context)
