@@ -4,6 +4,7 @@ import logging
 from hac_bot import common_functions, admin_functions
 from hac_bot.astrobot import AstroBot
 from hac_bot.photobot import PhotoBot
+from hac_bot.bookbot import BookBot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
 
 #main file
@@ -29,7 +30,7 @@ if __name__ == "__main__":
     #------------------------- AstroBot functions -------------------------
     astrobot = AstroBot()
     photobot = PhotoBot()
-    # bookbot = BookBot()
+    bookbot = BookBot()
 
     bot_dispatcher = bot_updater.dispatcher
 
@@ -50,8 +51,8 @@ if __name__ == "__main__":
 
     #------------------------- PhotoBot functions -------------------------
     
-    bot_dispatcher.add_handler(CommandHandler('startapod', photobot.send_apod, pass_job_queue=True))
-    bot_dispatcher.add_handler(CommandHandler('stopapod', photobot.stop_apod, pass_job_queue=True))
+    bot_dispatcher.add_handler(CommandHandler('start_apod', photobot.send_apod, pass_job_queue=True))
+    bot_dispatcher.add_handler(CommandHandler('stop_apod', photobot.stop_apod, pass_job_queue=True))
     astrometry_handler  = ConversationHandler(
         entry_points=[
             CommandHandler('analyze',photobot.start_platesolve, run_async=True),
@@ -71,12 +72,13 @@ if __name__ == "__main__":
 
     # #------------------------- BookBot functions -------------------------
     
-    # bot_dispatcher.add_handler(InlineQueryHandler(bookbot.send_book, run_async= True))
-    # bot_dispatcher.add_handler(CommandHandler('book', bookbot.new_books, pass_args=True, run_async= True))
+    bot_dispatcher.add_handler(InlineQueryHandler(bookbot.send_book, run_async= True))
+    bot_dispatcher.add_handler(CommandHandler('book', bookbot.new_books, pass_args=True, run_async= True))
 
     #------------------------- Admin functions -------------------------
     bot_dispatcher.add_handler(CommandHandler('add_group', admin_functions.add_group, pass_args=True, run_async=True))
     bot_dispatcher.add_handler(CommandHandler('remove_group', admin_functions.remove_group, pass_args=True, run_async=True))
+    bot_dispatcher.add_handler(CommandHandler('admin_help', admin_functions.admin_helper, pass_args=True, run_async=True))
 
     bot_dispatcher.add_handler(CallbackQueryHandler(common_functions.callback_query_handler, pass_chat_data=True, pass_user_data= True))
 

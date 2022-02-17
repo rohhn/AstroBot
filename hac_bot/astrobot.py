@@ -10,9 +10,9 @@ import re
 from io import BytesIO
 import requests
 from bs4 import BeautifulSoup as bs4
-from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import CallbackContext
+from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup, Update
 from better_profanity import profanity
-import telegram
 from . import common_functions, utils
 from selenium import webdriver
 chrome_options = webdriver.ChromeOptions()
@@ -25,6 +25,7 @@ try:
     CHROMEDRIVER_PATH = os.environ['CHROMEDRIVER_PATH']
     GOOGLE_CHROME_BIN = os.environ['GOOGLE_CHROME_BIN']
     chrome_options.binary_location = GOOGLE_CHROME_BIN
+    pass
 except KeyError as error:
     print("Save {} in environment variables.".format(error))
     sys.exit(1)
@@ -50,7 +51,7 @@ class AstroBot:
     
     # /randomarticle
     @utils.is_approved
-    def send_random_article(self, update: telegram.Update, context):
+    def send_random_article(self, update: Update, context: CallbackContext):
         try:
             update.message.reply_text(self.get_random_article())
         except:
@@ -90,7 +91,7 @@ class AstroBot:
 
     # /stop_daily_articles
     @utils.is_approved
-    def stop_daily_article(self, update, context):
+    def stop_daily_article(self, update: Update, context: CallbackContext):
         job_removed = common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             context.bot.sendMessage(chat_id=update.message.chat_id, text='Daily articles have been stopped.')
@@ -113,7 +114,7 @@ class AstroBot:
                 return False
 
     @utils.is_approved
-    def send_inline_news(self, update, context):
+    def send_inline_news(self, update: Update, context: CallbackContext):
         query = update.inline_query.query
         results = list()
         if not query:
@@ -141,7 +142,7 @@ class AstroBot:
 
     # /news
     @utils.is_approved
-    def send_news_article(self, update, context):
+    def send_news_article(self, update: Update, context: CallbackContext):
         search_text=""
         for i in context.args:
             search_text = search_text + " " +i
@@ -191,10 +192,8 @@ class AstroBot:
                 return("Cannot find Wikipedia page.")
                 
     @utils.is_approved
-    def send_wiki_info(self, update, context):
-        search_text=""
-        for i in context.args:
-            search_text = search_text + " " +i
+    def send_wiki_info(self, update: Update, context: CallbackContext):
+        search_text = update.message.text.split('/wiki')[1].strip()
         search_text += "+site:wikipedia.org"
         update.message.reply_text(self.get_wiki_summary(search_text.lower()))
 
@@ -241,7 +240,7 @@ class AstroBot:
         return img_file
 
     @utils.is_approved
-    def send_current_location_weather(self, update, context):
+    def send_current_location_weather(self, update: Update, context: CallbackContext):
         try:
             lat = update.message.location.latitude
             lon = update.message.location.longitude           
@@ -257,9 +256,9 @@ class AstroBot:
             update.message.reply_text(text="Error in retrieving data.")
 
     @utils.is_approved
-    def send_weather_data(self, update: telegram.Update, context):
+    def send_weather_data(self, update: Update, context: CallbackContext):
 
-        search_text = update.message.text.split('/weather ')[1].strip()
+        search_text = update.message.text.split('/weather')[1].strip()
             
         if(re.search("^[0-9]",search_text)):
             lat, lon = search_text.replace(' ','').split(',')
@@ -267,9 +266,9 @@ class AstroBot:
             if(update.message.chat.type == 'private'):     
                 kb_list = [[KeyboardButton(text='Send Current Location', request_location=True)]]
                 kb = ReplyKeyboardMarkup(kb_list, one_time_keyboard= True)
-                update.message.reply_text(text="Please include a location or click the button to send current location.", reply_markup = kb)
+                update.message.reply_text(text="Include a location or click the button to send current location.", reply_markup = kb)
             else:
-                update.message.reply_text(text='Please include a location.')
+                update.message.reply_text(text='Include a location to search.')
             return
         else:
             try:
@@ -294,7 +293,7 @@ class AstroBot:
 # ------------------------------------ WELCOME NEW MEMBERS -------------------------------------#
 
     @utils.is_approved
-    def welcome_new_user(self, update, context):
+    def welcome_new_user(self, update: Update, context: CallbackContext):
         for new_user_obj in update.message.new_chat_members:
             new_usr = ""
             message=r"Welcome to $title, $user! Please introduce yourself and share what excites you the most about astronomy." # Welcome message
@@ -308,7 +307,7 @@ class AstroBot:
 
 # ----------------------------------------------------------------------------------------#
 
-    def hac_rules(self, update, context):
+    def hac_rules(self, update: Update, context: CallbackContext):
         if str(update.message.chat_id) == os.environ['HAC_CHAT']:
             rules = """1. No spam/forward from other groups.\n2. Keep the discussion in the realm of Astronomy and related sciences.\n3. NSFW content will lead to a permanent ban.\n4. Do not message members of the group privately without cause/consent.\n\nIf any rule is breached, a warning will be issued and a second breach will result in a permanent ban.\n\n\nClear skies!"""
             update.message.reply_text(text = rules)

@@ -4,10 +4,8 @@ testing/
 .DS_Store/
 *.cfg
 __pycache__/
-test.py
 .ipynb_checkpoints/
 *.pyc
 *.log
 *.png
-refactor/
 .vscode/

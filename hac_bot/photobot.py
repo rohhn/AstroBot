@@ -1,13 +1,13 @@
-from cgitb import text
-import telegram
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-import requests
+import os
+import re
 import datetime
 import pytz
 import time
 import sys
+import requests
+from telegram.ext import CallbackContext
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
 from . import common_functions, astrometry, utils
-import re, os
 
 
 indt = pytz.timezone("Asia/Kolkata")
@@ -42,7 +42,8 @@ class PhotoBot():
             context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
 
     @utils.is_approved
-    def send_apod(self, update: telegram.Update, context):
+    @utils.is_group_admin
+    def send_apod(self, update: Update, context: CallbackContext):
 
         job_removed= common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
@@ -53,7 +54,8 @@ class PhotoBot():
         context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id, name=str(update.message.chat_id))
 
     @utils.is_approved
-    def stop_apod(self, update: telegram.Update, context):
+    @utils.is_group_admin
+    def stop_apod(self, update: Update, context: CallbackContext):
         job_removed = common_functions.remove_job(str(update.message.chat_id), context)
         if(job_removed):
             context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
@@ -83,7 +85,7 @@ class PhotoBot():
         return False
     
     @utils.is_approved
-    def platesolve(self, update: telegram.Update, context):
+    def platesolve(self, update: Update, context: CallbackContext):
         try:
             if update.message.photo:
                 image_url = update.message.photo[-1].get_file()['file_path']
@@ -168,12 +170,12 @@ class PhotoBot():
             return -1
 
     @utils.is_approved
-    def timeout(self, update: telegram.Update, context):
+    def timeout(self, update: Update, context: CallbackContext):
         self.req_msg.edit_text(text="Your request timed out. Please try again.")
         return -1 
 
     @utils.is_approved
-    def start_platesolve(self, update: telegram.Update, context):
+    def start_platesolve(self, update: Update, context: CallbackContext):
         try:
             self.login_data = astrometry.login()
             if self.login_data['status'] == 'success':
@@ -190,51 +192,39 @@ class PhotoBot():
             return -1
 
     @utils.is_approved
-    def cancel(self, update: telegram.Update, context):
+    def cancel(self, update: Update, context: CallbackContext):
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Cancelled request.")
         return -1
 
 # ------------------------------------ GET INFO ON DEEPSKY OBJECTS -------------------------------------#
 
     @utils.is_approved
-    def get_dso_data(self, update: telegram.Update, context):
-        search_text=""
-        for i in context.args:
-            search_text += i + ' '
+    def get_dso_data(self, update: Update, context: CallbackContext):
+        
+        search_text = update.message.text.split('/find')[1].strip()
 
-        # if update.message.text.lower().split('@hac_photobot tell me about')[1].strip() != '':
         if search_text != '':
-            # search_object = update.message.text.lower().split('@hac_photobot tell me about')[1].strip()
-            search_object = search_text
-            ignore_keys = ['object name', 'object type', 'constellation', 'deep_sky_image_link', 'visibility']
-            cat = 1
-            if re.search('m[ ]*[0-9]+', search_object.lower()):
-                search_object = re.sub('m[ ]*',"Messier ", search_object.lower())
-            elif re.search('messier[0-9]+', search_object.lower()):
-                search_object = re.sub('messier',"Messier ", search_object.lower())
-            elif re.search('ngc[0-9]+', search_object.lower()):
-                search_object = re.sub('ngc',"NGC ", search_object.lower())
-            elif re.search('ic[0-9]+', search_object.lower()):
-                search_object = re.sub('ic',"IC ", search_object.lower())
-            elif re.search('(sharpless) *2-', search_object.lower()):
-                search_object = re.sub('sharpless *2-', 'sh 2-', search_object.lower())
-                cat = 2
-            elif re.search('(sh) *2-', search_object.lower()):
-                search_object = re.sub('sh *2-', 'sh 2-', search_object.lower())
-                cat = 2
-            elif re.search('(sharpless) *(?!2-)', search_object.lower()):
-                search_object = re.sub('sharpless *', 'sh 2-', search_object.lower())
-                cat = 2
-            elif re.search('(sh) *(?!2-)', search_object.lower()):
-                search_object = re.sub('sh *', 'sh 2-', search_object.lower())
-                cat = 2
-            elif re.search('^sh ', search_object.lower()):
-                cat = 2
-            elif re.search('^abell[ ]*[0-9]+', search_object.lower()):
-                cat = 3
-                search_object = re.sub('^abell[ ]*','abell ', search_object.lower())
-            print(search_object)
-            search_object_index = search_object.replace(' ', '').lower()
+            
+            if re.search('m[ ]*[0-9]+', search_text.lower()):
+                search_text = re.sub('m[ ]*',"Messier ", search_text.lower())
+            elif re.search('messier[0-9]+', search_text.lower()):
+                search_text = re.sub('messier',"Messier ", search_text.lower())
+            elif re.search('ngc[0-9]+', search_text.lower()):
+                search_text = re.sub('ngc',"NGC ", search_text.lower())
+            elif re.search('ic[0-9]+', search_text.lower()):
+                search_text = re.sub('ic',"IC ", search_text.lower())
+            elif re.search('(sharpless) *2-', search_text.lower()):
+                search_text = re.sub('sharpless *2-', 'sh 2-', search_text.lower())
+            elif re.search('(sh) *2-', search_text.lower()):
+                search_text = re.sub('sh *2-', 'sh 2-', search_text.lower())
+            elif re.search('(sharpless) *(?!2-)', search_text.lower()):
+                search_text = re.sub('sharpless *', 'sh 2-', search_text.lower())
+            elif re.search('(sh) *(?!2-)', search_text.lower()):
+                search_text = re.sub('sh *', 'sh 2-', search_text.lower())
+            elif re.search('^abell[ ]*[0-9]+', search_text.lower()):
+                search_text = re.sub('^abell[ ]*','abell ', search_text.lower())
+            print(search_text)
+            search_object_index = search_text.replace(' ', '').lower()
             if search_object_index in common_functions.dso_data:
                 found_object = common_functions.dso_data[search_object_index]
 
