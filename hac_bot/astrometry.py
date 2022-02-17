@@ -1,13 +1,6 @@
-import requests
-import sys
 import json
-import os
-
-try:
-	ASTROMETRY_KEY = os.environ['ASTROMETRY_KEY']
-except KeyError as error:
-	print("Save {} in environment variables.".format(error))
-	sys.exit(1)
+import requests
+from . import config
 
 
 def login():
@@ -15,7 +8,7 @@ def login():
 	payload = {
 		'request-json': json.dumps(
 			{
-				'apikey': ASTROMETRY_KEY
+				'apikey': config.ASTROMETRY_KEY
 			}
 		)
 	}

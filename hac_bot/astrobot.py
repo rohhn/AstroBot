@@ -1,4 +1,3 @@
-from importlib import import_module
 import os
 import sys
 import random
@@ -13,7 +12,7 @@ from bs4 import BeautifulSoup as bs4
 from telegram.ext import CallbackContext
 from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup, Update
 from better_profanity import profanity
-from . import common_functions, utils
+from . import common_functions, utils, config
 from selenium import webdriver
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
@@ -21,14 +20,8 @@ chrome_options.add_argument('--no-sandbox')
 
 ind_tz = pytz.timezone('Asia/Kolkata')
 
-try:
-    CHROMEDRIVER_PATH = os.environ['CHROMEDRIVER_PATH']
-    GOOGLE_CHROME_BIN = os.environ['GOOGLE_CHROME_BIN']
-    chrome_options.binary_location = GOOGLE_CHROME_BIN
-    pass
-except KeyError as error:
-    print("Save {} in environment variables.".format(error))
-    sys.exit(1)
+if config.GOOGLE_CHROME_BIN is not None:
+    chrome_options.binary_location = config.GOOGLE_CHROME_BIN
 
 
 class AstroBot:
@@ -50,6 +43,7 @@ class AstroBot:
 
     
     # /randomarticle
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_random_article(self, update: Update, context: CallbackContext):
         try:
@@ -58,8 +52,9 @@ class AstroBot:
             update.message.reply_text("Error in retrieving data.")
 
 # ----------------------------------- DAILY ARTICLES -------------------------------------- #
-
-    @utils.is_approved
+    
+    # @utils.is_not_blacklist
+    # @utils.is_approved
     def get_daily_article(self, context):
         weekly_article_topics=['astronomy', 'latest+astronomy+news', 'astronomy+events','space+observations']
         day = datetime.datetime.now().astimezone(ind_tz).strftime("%A")
@@ -78,6 +73,7 @@ class AstroBot:
 
 
     # /daily_articles
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_daily_article(self, update,context):
         job_removed= common_functions.remove_job(str(update.message.chat_id), context)
@@ -90,6 +86,7 @@ class AstroBot:
   
 
     # /stop_daily_articles
+    @utils.is_not_blacklist
     @utils.is_approved
     def stop_daily_article(self, update: Update, context: CallbackContext):
         job_removed = common_functions.remove_job(str(update.message.chat_id), context)
@@ -113,6 +110,7 @@ class AstroBot:
             except:
                 return False
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_inline_news(self, update: Update, context: CallbackContext):
         query = update.inline_query.query
@@ -141,6 +139,7 @@ class AstroBot:
 
 
     # /news
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_news_article(self, update: Update, context: CallbackContext):
         search_text=""
@@ -190,7 +189,8 @@ class AstroBot:
                 return(text)
             except:
                 return("Cannot find Wikipedia page.")
-                
+
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_wiki_info(self, update: Update, context: CallbackContext):
         search_text = update.message.text.split('/wiki')[1].strip()
@@ -204,7 +204,7 @@ class AstroBot:
         img_file = None
 
         try:
-            driver = webdriver.Chrome(CHROMEDRIVER_PATH, options=chrome_options)
+            driver = webdriver.Chrome(config.CHROMEDRIVER_PATH, options=chrome_options)
             driver.set_window_size(800,800)
             driver.get(f'https://www.lightpollutionmap.info/#zoom=10&lat={lat}&lon={lon}&layers=B0FFFFFFTFFFFFFFFFF')
             driver.implicitly_wait(10)
@@ -239,6 +239,7 @@ class AstroBot:
 
         return img_file
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_current_location_weather(self, update: Update, context: CallbackContext):
         try:
@@ -255,6 +256,7 @@ class AstroBot:
         except Exception as e:
             update.message.reply_text(text="Error in retrieving data.")
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def send_weather_data(self, update: Update, context: CallbackContext):
 

@@ -1,31 +1,23 @@
-import os
-import sys
 import re
-import json
-from urllib.request import urlretrieve
 import requests
 import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
 from telegram.ext import CallbackContext
 from bs4 import BeautifulSoup as bs4
-from . import astrometry, utils
+from . import astrometry, utils, config
 
-
-try:
-    OPENWEATHER_KEY = os.environ['OPENWEATHER_KEY']
-    VIRTUALEARTH_KEY = os.environ['VIRTUALEARTH_KEY']
-
-    DSO_DATA_FILE = 'data/dso_data.json'
-    with open(DSO_DATA_FILE, 'r', encoding='utf-8') as file_object:
-        dso_data = json.load(file_object)
-
-except KeyError as error:
-    print(f"Save {error} in environment variables.")
-    sys.exit(1)
-except FileNotFoundError as error:
-    print(error)
-    sys.exit(1)
-
+HELP_MESSAGES = [
+    """Commands for the bot:\n
+/weather <latitude, longitude>: Fetch current weather update for given location.\n
+/weather <location name>: Fetch current weather update for given location.\n
+Send map location in chat: Fetch current weather update for given location.\n
+/analyze or /analyse: Plate-solve an astronomy image.\n
+/find <DSO name>: Display information about any Deep Space Object present in our datastore.\n
+/book <bookname>: Search for the book title on Library Genesis.\n
+/help: Display all bot commands.""",
+    """/start_apod: Receive daily APOD from NASA at 11AM IST.\n
+/stop_apod: Stop receiving daily APOD."""
+]
 
 def get_moon_info():
 
@@ -40,7 +32,7 @@ def get_moon_info():
 
 def get_weather_data(lat, lon):
 
-    openweather_url = f"https://api.openweathermap.org/data/2.5/onecall?lat={str(lat)}&lon={str(lon)}&exclude=minutely&units=metric&appid={OPENWEATHER_KEY}"
+    openweather_url = f"https://api.openweathermap.org/data/2.5/onecall?lat={str(lat)}&lon={str(lon)}&exclude=minutely&units=metric&appid={config.OPENWEATHER_KEY}"
     openweather_response = (requests.get(openweather_url)).json()
 
     cloud_cover = openweather_response['current']['clouds']
@@ -104,29 +96,31 @@ def get_time(i):
 
 
 def get_coordintes(search_text):
-    geolocation_url = "https://dev.virtualearth.net/REST/v1/Locations?key="+VIRTUALEARTH_KEY+"&o=json&q="+search_text+"&jsonso="+search_text
+    geolocation_url = "https://dev.virtualearth.net/REST/v1/Locations?key="+config.VIRTUALEARTH_KEY+"&o=json&q="+search_text+"&jsonso="+search_text
     geolocation_response = (requests.get(geolocation_url)).json()
     lat = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][0], 2)
     lon = round(geolocation_response['resourceSets'][0]['resources'][0]['point']['coordinates'][1], 2)
     return lat, lon
 
 
+@utils.is_not_blacklist
 @utils.is_approved
 def bot_credits(update: Update, context: CallbackContext):
     message = "This bot has been created by @cosmicpasta, @skilledspark and @dewwakakkar"
     update.message.reply_text(text=message)
 
 
+@utils.is_not_blacklist
 @utils.is_approved
 def bot_help(update: Update, context: CallbackContext):
     # message = "Commands for @HAC_AstroBot:\n\n/randomarticle - Fetch a random article related to an astronomy subject.\n\n/wiki <keyword> - Generate a short summary and link to wikipedia.\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location - Fetch a weather update.\n\n/news <search phrase> - search for related articles on Google News.\n\n/analyze or /analyse - Plate-solve an astronomy image.\n\n/find <DSO name> - Display information about any Deep Space Object present in our datastore.\n\n/book <bookname> - Search for the book title on Library Genesis.\n\n/help - Display all bot commands."
-    message = "Commands for @{}:\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location in chat: Fetch a weather update.\n\n/analyze or /analyse: Plate-solve an astronomy image.\n\n/find <DSO name>: Display information about any Deep Space Object present in our datastore.\n\n/book <bookname>: Search for the book title on Library Genesis.\n\n/help: Display all bot commands.".format(context.bot.get_me().username)
+
     markup = InlineKeyboardMarkup(
         [[
             InlineKeyboardButton(text="More commands", callback_data="bot_helper_more")
         ]]
     )
-    update.message.reply_text(text=message, reply_markup=markup)
+    update.message.reply_text(text=HELP_MESSAGES[0], reply_markup=markup)
 
 
 def get_astrometry_detailed_message(identified_objects):
@@ -137,8 +131,8 @@ def get_astrometry_detailed_message(identified_objects):
 
         obj_search_index = obj.replace(' ', '').lower()
 
-        if obj_search_index in dso_data:
-            detailed_msg += dso_data[obj_search_index]['short_description'] + "\n\n"
+        if obj_search_index in config.DSO_DATA:
+            detailed_msg += config.DSO_DATA[obj_search_index]['short_description'] + "\n\n"
 
     return detailed_msg
 
@@ -201,7 +195,7 @@ def callback_query_handler(update: Update, context: CallbackContext):
 
     elif update.callback_query.data.startswith('full_dso_data_'):
         object_search_index = update.callback_query.data.split('full_dso_data_')[1]
-        found_object = dso_data[object_search_index]
+        found_object = config.DSO_DATA[object_search_index]
 
         try:
             update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="< Back", callback_data="back_dso_data_{}".format(object_search_index))]]) ,caption=found_object['full_description'])
@@ -212,28 +206,27 @@ def callback_query_handler(update: Update, context: CallbackContext):
 
     elif update.callback_query.data.startswith('back_dso_data_'):
         object_search_index = update.callback_query.data.split('back_dso_data_')[1]
-        found_object = dso_data[object_search_index]
+        found_object = config.DSO_DATA[object_search_index]
         update.callback_query.message.edit_caption(reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Get detailed information", callback_data="full_dso_data_".format(object_search_index))]]) ,caption=found_object['short_description'])
     
     elif update.callback_query.data == 'bot_helper_more':
-        msg = "/start_apod: Receive daily APOD from NASA at 11AM IST.\n\n/stop_apod: Stop receiving daily APOD."
+
         markup = InlineKeyboardMarkup(
             [[
                 InlineKeyboardButton(text="< Back", callback_data="bot_helper_back")
             ]]
         )
-        update.callback_query.message.edit_text(text=msg, reply_markup=markup)
+        update.callback_query.message.edit_text(text=HELP_MESSAGES[1], reply_markup=markup)
 
     elif update.callback_query.data == 'bot_helper_back':
-        msg = "Commands for @{}:\n\n/weather <latitude, longitude> or\n/weather <location name> or\nsending a map location in chat: Fetch a weather update.\n\n/analyze or /analyse: Plate-solve an astronomy image.\n\n/find <DSO name>: Display information about any Deep Space Object present in our datastore.\n\n/book <bookname>: Search for the book title on Library Genesis.\n\n/help: Display all bot commands.".format(context.bot.get_me().username)
+        
         markup = InlineKeyboardMarkup(
             [[
                 InlineKeyboardButton(text="More commands", callback_data="bot_helper_more")
             ]]
         )
-        update.callback_query.message.edit_text(text=msg, reply_markup=markup)
+        update.callback_query.message.edit_text(text=HELP_MESSAGES[0], reply_markup=markup)
 
-@utils.is_group_admin
 def testing(update: Update, context: CallbackContext):
 
     update.message.reply_text(text=update.message.from_user.id)

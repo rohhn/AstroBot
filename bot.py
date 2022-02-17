@@ -1,11 +1,11 @@
 import os
-import sys
 import logging
-from hac_bot import common_functions, admin_functions
+from hac_bot import common_functions, admin_functions, config
 from hac_bot.astrobot import AstroBot
 from hac_bot.photobot import PhotoBot
 from hac_bot.bookbot import BookBot
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler, TypeHandler
+
 
 #main file
 project_path = os.path.abspath(os.path.dirname(__file__))
@@ -19,13 +19,7 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
 
-    try:
-        token = os.environ['BOT_TOKEN']
-    except KeyError:
-        print("Save bot token in environment as 'BOT_TOKEN'.")
-        sys.exit(1)
-
-    bot_updater = Updater(token, use_context= True, workers= 32)
+    bot_updater = Updater(config.BOT_TOKEN, use_context= True, workers= 32)
 
     #------------------------- AstroBot functions -------------------------
     astrobot = AstroBot()
@@ -70,7 +64,7 @@ if __name__ == "__main__":
     bot_dispatcher.add_handler(astrometry_handler)
     bot_dispatcher.add_handler(CommandHandler('find', photobot.get_dso_data, run_async=True))
 
-    # #------------------------- BookBot functions -------------------------
+    #------------------------- BookBot functions -------------------------
     
     bot_dispatcher.add_handler(InlineQueryHandler(bookbot.send_book, run_async= True))
     bot_dispatcher.add_handler(CommandHandler('book', bookbot.new_books, pass_args=True, run_async= True))
@@ -78,8 +72,15 @@ if __name__ == "__main__":
     #------------------------- Admin functions -------------------------
     bot_dispatcher.add_handler(CommandHandler('add_group', admin_functions.add_group, pass_args=True, run_async=True))
     bot_dispatcher.add_handler(CommandHandler('remove_group', admin_functions.remove_group, pass_args=True, run_async=True))
+    bot_dispatcher.add_handler(CommandHandler('blacklist', admin_functions.add_user_to_blacklist, pass_args=True, run_async=True))
+    bot_dispatcher.add_handler(CommandHandler('whitelist', admin_functions.remove_user_from_blacklist, pass_args=True, run_async=True))
+    bot_dispatcher.add_handler(CommandHandler('warn', admin_functions.warn_user, pass_args=True, run_async=True))
     bot_dispatcher.add_handler(CommandHandler('admin_help', admin_functions.admin_helper, pass_args=True, run_async=True))
 
     bot_dispatcher.add_handler(CallbackQueryHandler(common_functions.callback_query_handler, pass_chat_data=True, pass_user_data= True))
+
+    bot_dispatcher.add_handler(CommandHandler('test', common_functions.testing, pass_args=True, run_async=True), group=1)
+
+    config.check_backend_config()
 
     bot_updater.start_polling()

@@ -11,7 +11,7 @@ def is_approved(func):
                 update = arg
 
         if update.message.chat.type != 'private':
-            if str(update.message.chat.id) not in config.approved:
+            if str(update.message.chat.id) not in config.approved_groups:
                 return False
         func(*args, **kwargs)
         return True
@@ -26,7 +26,7 @@ def is_bot_admin(func):
             if isinstance(arg, Update):
                 update = arg
 
-        if str(update.message.from_user.id) not in config.bot_admins:
+        if str(update.message.from_user.id) not in config.BOT_ADMINS:
             return False
         func(*args, **kwargs)    
         return True
@@ -48,6 +48,21 @@ def is_group_admin(func):
             if update.message.from_user.id not in admins:
                 return False
         func(*args, **kwargs)
+        return True
+
+    return check
+
+
+def is_not_blacklist(func):
+
+    def check(*args, **kwargs):
+        for arg in args:
+            if isinstance(arg, Update):
+                update = arg
+
+        if str(update.message.from_user.id) in config.blacklist:
+            return False
+        func(*args, **kwargs)    
         return True
 
     return check

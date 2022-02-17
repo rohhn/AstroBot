@@ -1,35 +1,26 @@
-import os
 import re
 import datetime
 import pytz
 import time
-import sys
 import requests
 from telegram.ext import CallbackContext
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
-from . import common_functions, astrometry, utils
+from hac_bot import admin_functions
+from . import common_functions, astrometry, utils, config
 
-
-indt = pytz.timezone("Asia/Kolkata")
-
-try:
-    APOD_KEY = os.environ['APOD_KEY']
-    ADMIN_CHAT = os.environ['ADMIN_CHAT']
-
-except KeyError as error:
-    print("Save {} in environment variables.".format(error))
-    sys.exit(1)
+ind_tz = pytz.timezone("Asia/Kolkata")
 
 
 class PhotoBot():
 
 # ------------------------------------ APOD EVERYDAY -------------------------------------#
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def get_apod(self, context):
 
         #API call
-        url   = f"https://api.nasa.gov/planetary/apod?api_key={APOD_KEY}"
+        url   = f"https://api.nasa.gov/planetary/apod?api_key={config.APOD_KEY}"
         resp  = requests.get(url).json()
         url   = resp['url']
         date  = "Date: " + str(resp['date'])
@@ -41,6 +32,7 @@ class PhotoBot():
             message = (f"<a href=\"{url}\"><b>{title}</b></a>\n\n\n{explanation}\n<i>{date}</i>\n")
             context.bot.sendMessage(chat_id=context.job.context, text=message, parse_mode='HTML')
 
+    @utils.is_not_blacklist
     @utils.is_approved
     @utils.is_group_admin
     def send_apod(self, update: Update, context: CallbackContext):
@@ -51,8 +43,9 @@ class PhotoBot():
             context.bot.delete_message(update.message.chat_id, r.message_id)
 
         context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
-        context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=indt), context=update.message.chat_id, name=str(update.message.chat_id))
+        context.job_queue.run_daily(self.get_apod,time=datetime.time(11,0,0,tzinfo=ind_tz), context=update.message.chat_id, name=str(update.message.chat_id))
 
+    @utils.is_not_blacklist
     @utils.is_approved
     @utils.is_group_admin
     def stop_apod(self, update: Update, context: CallbackContext):
@@ -83,7 +76,8 @@ class PhotoBot():
             else:
                 return(self.check_job_creation(subid, count+1))
         return False
-    
+
+    @utils.is_not_blacklist
     @utils.is_approved
     def platesolve(self, update: Update, context: CallbackContext):
         try:
@@ -147,21 +141,23 @@ class PhotoBot():
                 else:
                     bot_msg.edit_text(text="Unable to solve the given image.")
                     if job_status is False:
+
                         try:
                             username = "@{}".format(update.message.from_user.username)
                         except:
                             username = update.message.from_user.first_name
 
-                        failure_info = "Job ID: {}\nUsername: {}\nUser ID: {}".format(
-                            jobid,
-                            username,
-                            update.message.from_user.id
-                        )
+                        data = {
+                                'source': 'photobot',
+                                'function': 'platesolve',
+                                'astrometry_job_id': jobid,
+                                'username': username,
+                                'user_id': update.message.from_user.id,
+                                'added_by': 'bot',
+                                'added_on': datetime.datetime.now(tz=ind_tz)
+                            }
 
-                        context.bot.sendMessage(
-                            chat_id=ADMIN_CHAT,
-                            text=failure_info
-                        )
+                        admin_functions.update_watch_list(data, context)
                     return -1
             else:
                 bot_msg.edit_text(text="Job took too long. Request closed.")
@@ -169,11 +165,13 @@ class PhotoBot():
         else:
             return -1
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def timeout(self, update: Update, context: CallbackContext):
         self.req_msg.edit_text(text="Your request timed out. Please try again.")
         return -1 
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def start_platesolve(self, update: Update, context: CallbackContext):
         try:
@@ -191,6 +189,7 @@ class PhotoBot():
             self.req_msg = update.message.reply_text(text='Systems down. Please report the error to the admins.')
             return -1
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def cancel(self, update: Update, context: CallbackContext):
         context.bot.sendMessage(chat_id = update.message.chat_id, text="Cancelled request.")
@@ -198,6 +197,7 @@ class PhotoBot():
 
 # ------------------------------------ GET INFO ON DEEPSKY OBJECTS -------------------------------------#
 
+    @utils.is_not_blacklist
     @utils.is_approved
     def get_dso_data(self, update: Update, context: CallbackContext):
         
@@ -225,8 +225,8 @@ class PhotoBot():
                 search_text = re.sub('^abell[ ]*','abell ', search_text.lower())
             print(search_text)
             search_object_index = search_text.replace(' ', '').lower()
-            if search_object_index in common_functions.dso_data:
-                found_object = common_functions.dso_data[search_object_index]
+            if search_object_index in config.DSO_DATA:
+                found_object = config.DSO_DATA[search_object_index]
 
                 if found_object['full_description'] is not None:
 
