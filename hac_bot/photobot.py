@@ -13,8 +13,6 @@ class PhotoBot():
 
 # ------------------------------------ APOD EVERYDAY -------------------------------------#
 
-    # @utils.is_not_blacklist
-    # @utils.is_approved
     def get_apod(self, context):
 
         #API call
