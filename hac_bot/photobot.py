@@ -157,6 +157,22 @@ class PhotoBot():
                     return -1
             else:
                 bot_msg.edit_text(text="Job took too long. Request closed.")
+                try:
+                    username = "@{}".format(update.message.from_user.username)
+                except:
+                    username = update.message.from_user.first_name
+
+                data = {
+                        'source': 'photobot',
+                        'function': 'platesolve',
+                        'astrometry_job_id': jobid,
+                        'username': username,
+                        'user_id': update.message.from_user.id,
+                        'added_by': 'bot',
+                        'added_on': datetime.datetime.now(tz=config.TIMEZONE)
+                    }
+
+                admin_functions.update_watch_list(data, context)
                 return -1
         else:
             return -1
