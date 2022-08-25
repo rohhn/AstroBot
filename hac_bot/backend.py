@@ -6,6 +6,7 @@ from . import config
 def create_client():
     client = pymongo.MongoClient(
         host=config.MONGODB_HOST,
+        port=config.MONGODB_PORT,
         tlsCAFile = certifi.where()
     )
     return client

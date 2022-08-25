@@ -44,6 +44,7 @@ if os.environ.get('BOT_BACKEND') == 'mongodb':
     BACKEND = 1
     try:
         MONGODB_HOST = os.environ['MONGODB_HOST']  # pass MongoDB URL with username and password
+        MONGODB_PORT = os.environ['MONGODB_PORT']
         MONGODB_DB_NAME = os.environ['MONGODB_DB_NAME']
     except KeyError as missing_key:
         print("Save {} in environment variables.".format(missing_key))

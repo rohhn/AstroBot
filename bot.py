@@ -18,7 +18,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-if __name__ == "__main__":
+def application():
 
     bot_updater = Updater(config.BOT_TOKEN, use_context= True, workers= 32)
 
@@ -89,3 +89,7 @@ if __name__ == "__main__":
         bot_updater.job_queue.run_daily(photobot.get_apod,time=config.APOD_TIME, context=group_id, name=group_id)
 
     bot_updater.start_polling()
+
+
+if __name__ == "__main__":
+    application()
