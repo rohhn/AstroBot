@@ -23,10 +23,10 @@ def add_group(update: Update, context: CallbackContext):
                     db_table_name = f"{config.MONGODB_DB_NAME}.approved_groups"  # Format: DB_NAME.TABLE_NAME
 
                     response = backend.find_one_in_table(data, db_table_name)
-                
+
                     if response is None:
-                        response = backend.insert_into_table(data, db_table_name)
-                    
+                        backend.insert_into_table(data, db_table_name)
+
                     config.approved_groups = backend.get_approved_groups(config.MONGODB_DB_NAME)
                 else:
                     config.approved_groups.append(new_chat_id)
