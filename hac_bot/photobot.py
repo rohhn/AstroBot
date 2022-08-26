@@ -213,7 +213,7 @@ class PhotoBot():
     @utils.is_approved
     def get_dso_data(self, update: Update, context: CallbackContext):
         
-        search_text = update.message.text.split('/find')[1].strip()
+        search_text = re.sub("@[a-z0-9_-]*\s{1}", "", update.message.text.lower().split('/find')[1]).strip()
 
         if search_text != '':
             
