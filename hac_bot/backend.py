@@ -1,18 +1,18 @@
-import pymongo
 import certifi
+import pymongo
+
 from . import config
 
 
 def create_client():
     client = pymongo.MongoClient(
         host=config.MONGODB_HOST,
-        tlsCAFile = certifi.where()
+        tlsCAFile=certifi.where()
     )
     return client
 
 
 def insert_into_table(data, db_table_name):
-
     try:
         db_name, table_name = db_table_name.split('.')
         mongo_client = create_client()
@@ -27,7 +27,6 @@ def insert_into_table(data, db_table_name):
 
 
 def find_one_in_table(data, db_table_name):
-
     mongodb_client = create_client()
 
     db_name, table_name = db_table_name.split('.')
@@ -41,7 +40,6 @@ def find_one_in_table(data, db_table_name):
 
 
 def delete_one_from_table(data, db_table_name):
-
     mongodb_client = create_client()
 
     db_name, table_name = db_table_name.split('.')
@@ -58,11 +56,23 @@ def delete_one_from_table(data, db_table_name):
 
 
 def get_approved_groups(db):
-    
     mongo_client = create_client()
     table = mongo_client[db]['approved_groups']
 
-    response = table.find({},{'group_id': 1})
+    response = table.find({}, {'group_id': 1})
+
+    all_groups = [item['group_id'] for item in response]
+
+    mongo_client.close()
+
+    return all_groups
+
+
+def get_apod_active_groups(db):
+    mongo_client = create_client()
+    table = mongo_client[db]['apod_active_groups']
+
+    response = table.find({}, {'group_id': 1})
 
     all_groups = [item['group_id'] for item in response]
 
@@ -72,11 +82,10 @@ def get_approved_groups(db):
 
 
 def get_blacklist_users(db):
-    
     mongo_client = create_client()
     table = mongo_client[db]['blacklist_users']
 
-    response = table.find({},{'_id': 1, 'user_id': 1, 'infringement_count': 1})
+    response = table.find({}, {'_id': 1, 'user_id': 1, 'infringement_count': 1})
 
     blacklisted_users = [item['user_id'] for item in response if int(item['infringement_count']) >= 3]
 
@@ -86,7 +95,6 @@ def get_blacklist_users(db):
 
 
 def update_watchlist_table(data, db_table_name):
-
     mongo_client = create_client()
     db_name, table_name = db_table_name.split('.')
     table = mongo_client[db_name][table_name]
@@ -95,7 +103,7 @@ def update_watchlist_table(data, db_table_name):
 
     if existing_info is not None:
         if 'infringement_count' not in data:
-            new_count = int(existing_info['infringement_count'])+1
+            new_count = int(existing_info['infringement_count']) + 1
         else:
             new_count = data['infringement_count']
 

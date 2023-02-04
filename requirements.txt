@@ -19,7 +19,7 @@ outcome==1.1.0
 pycparser==2.21
 pymongo==4.0.1
 pyOpenSSL==22.0.0
-python-telegram-bot==13.11
+python-telegram-bot==20.0
 pytz==2021.3
 pytz-deprecation-shim==0.1.0.post0
 requests==2.27.1

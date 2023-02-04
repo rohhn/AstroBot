@@ -1,12 +1,15 @@
+import datetime
+import json
 import os
 import sys
-import json
+
 import pytz
-import datetime
+
 from . import backend
 
 TIMEZONE = pytz.timezone("Asia/Kolkata")
 APOD_TIME = datetime.time(11, 0, 0, tzinfo=TIMEZONE)
+
 
 def check_backend_config():
     if os.environ.get('BOT_BACKEND') == 'mongodb':
@@ -14,21 +17,22 @@ def check_backend_config():
     else:
         print("Using in-memory data store. This will reset on bot restart.")
 
+
 try:
     BOT_TOKEN = os.environ['BOT_TOKEN']
     BOT_ADMINS = os.environ['BOT_ADMINS'].split(',')
-    ADMIN_CHAT = os.environ.get('ADMIN_CHAT', None)
+    ADMIN_CHAT = os.environ.get('ADMIN_CHAT')
 
     # AstroBot
     CHROMEDRIVER_PATH = os.environ['CHROMEDRIVER_PATH']
-    GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN', None)
+    GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN')
     OPENWEATHER_KEY = os.environ['OPENWEATHER_KEY']
     VIRTUALEARTH_KEY = os.environ['VIRTUALEARTH_KEY']
 
     # PhotoBot
     APOD_KEY = os.environ['APOD_KEY']
     ASTROMETRY_KEY = os.environ['ASTROMETRY_KEY']
-    
+
 except KeyError as missing_key:
     print(f"Save {missing_key} environment variables.")
     sys.exit(1)
@@ -48,11 +52,12 @@ if os.environ.get('BOT_BACKEND') == 'mongodb':
     except KeyError as missing_key:
         print("Save {} in environment variables.".format(missing_key))
         sys.exit(1)
-    
-    approved_groups = backend.get_approved_groups(db=MONGODB_DB_NAME)
+
+    apod_active_groups = backend.get_approved_groups(db=MONGODB_DB_NAME)
+    apod_active_groups = backend.get_apod_active_groups(db=MONGODB_DB_NAME)
     blacklist = backend.get_blacklist_users(db=MONGODB_DB_NAME)
 
 else:
     BACKEND = 0
     blacklist = []
-    approved_groups = []
+    apod_active_groups = []

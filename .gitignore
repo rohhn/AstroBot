@@ -1,11 +1,21 @@
-config/
-testing/
-.DS_Store
-.DS_Store/
-*.cfg
+# python
 __pycache__/
 .ipynb_checkpoints/
 *.pyc
+
+# mac
+.DS_Store
+.DS_Store/
+
+# extra files
+*.cfg
 *.log
 *.png
+
+# local
+config/
+testing/
+
+#editors
 .vscode/
+.idea/
