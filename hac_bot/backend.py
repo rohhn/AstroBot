@@ -71,6 +71,19 @@ def get_approved_groups(db):
     return all_groups
 
 
+def get_apod_active_groups(db):
+    mongo_client = create_client()
+    table = mongo_client[db]['apod_active_groups']
+
+    response = table.find({}, {'group_id': 1})
+
+    all_groups = [item['group_id'] for item in response]
+
+    mongo_client.close()
+
+    return all_groups
+
+
 def get_blacklist_users(db):
     
     mongo_client = create_client()

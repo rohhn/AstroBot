@@ -50,6 +50,7 @@ if os.environ.get('BOT_BACKEND') == 'mongodb':
         sys.exit(1)
     
     approved_groups = backend.get_approved_groups(db=MONGODB_DB_NAME)
+    apod_active_groups = backend.get_apod_active_groups(db=MONGODB_DB_NAME)
     blacklist = backend.get_blacklist_users(db=MONGODB_DB_NAME)
 
 else:

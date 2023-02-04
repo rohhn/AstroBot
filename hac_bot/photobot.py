@@ -5,8 +5,9 @@ import time
 import requests
 from telegram.ext import CallbackContext
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
+from pymongo.errors import ConfigurationError, ConnectionFailure, OperationFailure
 from hac_bot import admin_functions
-from . import common_functions, astrometry, utils, config
+from . import common_functions, astrometry, utils, config, backend
 
 
 class PhotoBot():
@@ -33,21 +34,69 @@ class PhotoBot():
     @utils.is_group_admin
     def send_apod(self, update: Update, context: CallbackContext):
 
-        job_removed= common_functions.remove_job(str(update.message.chat_id), context)
-        if(job_removed):
-            r = context.bot.sendMessage(chat_id=update.message.chat_id, text="Running instance terminated.")
-            context.bot.delete_message(update.message.chat_id, r.message_id)
+        group_id = str(update.message.chat_id)
 
-        context.bot.sendMessage(chat_id=update.message.chat_id, text="APOD started")
-        context.job_queue.run_daily(self.get_apod,time=config.APOD_TIME, context=update.message.chat_id, name=str(update.message.chat_id))
+        try:
+            if group_id not in config.apod_active_groups:
+                if config.BACKEND == 1:
+                    data = {
+                        'group_id': group_id,
+                        'added_by': update.message.from_user.username,
+                        'added_on': datetime.datetime.now(tz=config.TIMEZONE)
+                    }
+                    db_table_name = f"{config.MONGODB_DB_NAME}.apod_active_groups"  # Format: DB_NAME.TABLE_NAME
+
+                    response = backend.find_one_in_table(data, db_table_name)
+
+                    if response is None:
+                        response = backend.insert_into_table(data, db_table_name)
+
+                    config.apod_active_groups = backend.get_apod_active_groups(config.MONGODB_DB_NAME)
+                else:
+                    config.apod_active_groups.append(group_id)
+                status = 1
+            else:
+                status = 0
+
+        except (ConfigurationError, OperationFailure, ConnectionFailure) as error:
+            error_msg = f"BACKEND ERROR!\n{error}"
+            print(error_msg)
+        else:
+            job_removed= common_functions.remove_job(group_id, context)
+            if(job_removed):
+                r = context.bot.sendMessage(chat_id=group_id, text="Running instance terminated.")
+                context.bot.delete_message(group_id, r.message_id)
+
+            context.bot.sendMessage(chat_id=group_id, text="APOD started")
+            context.job_queue.run_daily(self.get_apod,time=config.APOD_TIME, context=group_id, name=str(update.message.chat_id))
 
     @utils.is_not_blacklist
     @utils.is_approved
     @utils.is_group_admin
     def stop_apod(self, update: Update, context: CallbackContext):
-        job_removed = common_functions.remove_job(str(update.message.chat_id), context)
-        if(job_removed):
-            context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
+
+        group_id = str(update.message.chat_id)
+
+        try:
+            if config.BACKEND == 1:
+                data = {'group_id': group_id}
+                db_table_name = f"{config.MONGODB_DB_NAME}.apod_active_groups"
+
+                response = backend.delete_one_from_table(data, db_table_name)
+
+                config.apod_active_groups = backend.get_apod_active_groups(config.MONGODB_DB_NAME)
+            else:
+                config.apod_active_groups.remove(group_id)
+
+        except ValueError:
+            update.message.reply_text(text=f"APOD not active.")
+        except (ConfigurationError, OperationFailure, ConnectionFailure) as error:
+            error_msg = f"BACKEND ERROR!\n{error}"
+            print(error_msg)
+        else:
+            job_removed = common_functions.remove_job(str(update.message.chat_id), context)
+            if(job_removed):
+                context.bot.sendMessage(chat_id=update.message.chat_id, text='APOD has been stopped.')
 
 # ------------------------------------ PLATESOLVE IMAGES -------------------------------------#
 
