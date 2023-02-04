@@ -6,7 +6,9 @@ from hac_bot.photobot import PhotoBot
 from hac_bot.bookbot import BookBot
 from telegram.ext import Updater, CommandHandler, MessageHandler
 from telegram.ext import Filters, InlineQueryHandler, CallbackQueryHandler, ConversationHandler
+from dotenv import load_dotenv
 
+load_dotenv(override=False)
 
 #main file
 project_path = os.path.abspath(os.path.dirname(__file__))
